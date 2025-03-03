@@ -25,12 +25,16 @@ jobs:
           distribution: 'adopt'
           cache: maven
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
+        run: mvn -B package --file backend/pom.xml
+        env:
+          SPRING_DATA_MONGODB_URI: ${{secrets.MONGODB_URL}}
+          SPRING_DATA_MONGODB_DATABASE: ${{secrets.MONGODB_NAME}}
 
       - name: Build and Push Docker image
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
-          image: nani594/blog
+          image: ${{secrets.DOCKERHUB_IMAGE_NAME}}
+          dockerfile: 'backend/Dockerfile'
           tags: ${{ github.sha }}
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -51,10 +55,11 @@ jobs:
         uses: azure/container-apps-deploy-action@v2
         with:
           containerAppName: blog
-          resourceGroup: springboot_group
-          containerAppEnvironment: managedEnvironment-springbootgroup-af07
-          imageToDeploy: registry.hub.docker.com/nani594/blog:${{ github.sha }}
+          resourceGroup: ${{secrets.AZURE_RESOURCE_GROUP}}
+          containerAppEnvironment: ${{secrets.AZURE_CONTAINER_APP_ENVIRONMENT}}
+          imageToDeploy: registry.hub.docker.com/${{secrets.DOCKERHUB_IMAGE_NAME}}:${{ github.sha }}
           registryUrl: registry.hub.docker.com
           registryUsername: ${{ secrets.DOCKER_USERNAME }}
           registryPassword: ${{ secrets.DOCKER_PASSWORD }}
           targetPort: 8080
+          environmentVariables: "SPRING_DATA_MONGODB_URI=${{secrets.MONGODB_URL}} SPRING_DATA_MONGODB_DATABASE=${{secrets.MONGODB_NAME}}"
