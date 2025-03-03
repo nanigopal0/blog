@@ -35,6 +35,7 @@ jobs:
         with:
           image: ${{secrets.DOCKERHUB_IMAGE_NAME}}
           dockerfile: 'backend/Dockerfile'
+          directory: backend
           tags: ${{ github.sha }}
           registry: docker.io
           username: ${{ secrets.DOCKER_USERNAME }}
