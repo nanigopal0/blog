@@ -51,7 +51,7 @@ function Search({ onLogin }) {
           placeholder="Search"
         />
         <button className="mx-2 bg-lime-500 p-2 rounded-lg" onClick={() => fetchSearchedBlogs()}>
-          <img src="/src/assets/search.svg" alt="" />
+          <img src="/public/search.svg" alt="" />
         </button>
       </div>
       <p className="text-2xl font-bold my-3">Searched blogs</p>
