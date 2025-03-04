@@ -11,7 +11,7 @@ WORKDIR /home/app
 #RUN ./mvnw dependency:go-offline
 #RUN ./mvnw clean package -DskipTests
 #COPY --from=build /target/api-0.0.1-SNAPSHOT.jar colab-blog-api.jar
-COPY --from=build /home/app/target/api-0.0.1-SNAPSHOT.jar blog.jar
+COPY --from=build /home/app/target/*.jar blog.jar
 EXPOSE 8080
 ENTRYPOINT [ "java","-jar","/home/app/blog.jar" ]
 #EXPOSE 8080
