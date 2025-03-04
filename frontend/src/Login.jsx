@@ -10,7 +10,7 @@ function Login({ onLogin }) {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error,setError] = useState("");
-
+    
     const setPass = (pass) => {
         setPassword(pass.target.value);
         if(error.length > 0) setError("");
