@@ -220,7 +220,7 @@ function Profile({ onLogin }) {
                     }
                     }
                         className="w-32 h-32 rounded-full self-center border border-gray-600 my-4"
-                        src={profileImageInput ? URL.createObjectURL(profileImageInput) : userInfo.photo? userInfo.photo : "/src/assets/person.svg" }
+                        src={profileImageInput ? URL.createObjectURL(profileImageInput) : userInfo.photo? userInfo.photo : "/person.svg" }
                         alt="user profile image"
                     />
 

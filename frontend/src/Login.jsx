@@ -41,7 +41,6 @@ function Login({ onLogin }) {
                 if (!result.ok) {
                     throw new Error("Invalid credentials");
                 }
-                console.log("after error");
 
                 const resultData = await result.text(); // Parse the text from the response
                 localStorage.setItem("token", resultData);
@@ -62,7 +61,7 @@ function Login({ onLogin }) {
 
     return (
         // using grid to center a div
-        <div className="h-screen  bg-cover bg-center w-full" style={{ backgroundImage: "url('/public/login.jpg')" }}>
+        <div className="h-screen  bg-cover bg-center w-full" style={{ backgroundImage: "url('/login.jpg')" }}>
 
             <div className="flex justify-center items-center h-full  lg:me-10">
                 {/* using flex to center a div  *
