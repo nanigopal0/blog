@@ -1,78 +1,89 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import HomeBlogCard from "./components/HomeBlogCard";
-import { sortAndFormatDates } from "./util/SortAndFormatBlog";
 import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
+import { AuthContext } from "./contexts/AuthContext";
+import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
+import PaginationRounded from "./components/PaginationRounded";
 
-function Search({ onLogin }) {
-  
+function Search() {
   const [searchedBlogs, setSearchedBlogs] = useState([]);
-  const [loading, setLoading] = useState(false)
-  const [searchKey, setSearchKey] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { authToken, logout } = useContext(AuthContext);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(ConstBlogPageSize[0]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [isLastPage, setIsLastPage] = useState(false);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const searchKey = queryParams.get("query") || ""; // Get the search key from the URL
 
-  
-  const fetchSearchedBlogs = async () => {
-    setLoading(true)
-    const results = await fetchSearchResult();
-    setSearchedBlogs(sortAndFormatDates(results));
-    setLoading(false)
-  }
+  useEffect(() => {
+    fetchSearchedBlogs(pageNumber - 1, pageSize);
+  }, [searchKey]);
 
-  const fetchSearchResult = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/blog/search?title=${searchKey}`, {
+  const fetchSearchedBlogs = async (p, pageSize) => {
+    setLoading(true);
+    const fetchedBlogs = await fetchSearchResult(p, pageSize);
+
+    if (fetchedBlogs && fetchedBlogs.content) {
+      setSearchedBlogs(fetchedBlogs.content);
+      setPageNumber(fetchedBlogs.pageNumber + 1);
+      setPageSize(fetchedBlogs.pageSize);
+      setIsLastPage(fetchedBlogs.isLastPage);
+      setTotalPages(fetchedBlogs.totalPages);
+      setTotalElements(fetchedBlogs.totalElements);
+    }
+    setLoading(false);
+  };
+
+  const fetchSearchResult = async (pageNumber, pageSize) => {
+    return await fetch(
+      `${API_BASE_URL}/blog/search?keyword=${searchKey}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
+      {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": localStorage.getItem("token"),
-        }
+          Authorization: authToken,
+        },
+      }
+    )
+      .then((res) => {
+        return handleResponseFromFetchBlog(res, logout); // Parse the text from the response
+      })
+      .catch((error) => {
+        error.response == 404
+          ? console.log("No result found")
+          : console.log("Error fetching blogs:", error);
+        return [];
       });
-
-
-      return await handleResponseFromFetchBlog(response, onLogin) // Parse the text from the response
-
-    } catch (error) {
-      
-      console.error("There has been a problem with fetch operation:", error);
-      return [];
-    }
   };
 
   return (
     <div className="m-4">
-      <div className=" flex w-full max-w-2xl">
-        <input
-          type="text"
-          value={searchKey}
-          onChange={(s) => setSearchKey(s.target.value)}
-          className="border rounded-lg w-full max-w-xl border-black p-2"
-          placeholder="Search"
-        />
-        <button className="mx-2 bg-lime-500 p-2 rounded-lg" onClick={() => fetchSearchedBlogs()}>
-          <img src="/search.svg" alt="" />
-        </button>
-      </div>
       <p className="text-2xl font-bold my-3">Searched blogs</p>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-        {loading ? <LoadingIndicator /> : <>{(searchedBlogs.length == 0) ? 'No result found': ''}</>}
+        {loading ? (
+          <LoadingIndicator />
+        ) : (
+          <>{searchedBlogs.length == 0 ? "No result found" : ""}</>
+        )}
         {searchedBlogs &&
           searchedBlogs.map((element) => {
-            return (
-              <HomeBlogCard
-                key={element.id}
-                id={element.id}
-                coverImage={element.coverImage}
-                title={element.title}
-                content={element.content}
-                userImage={element.userImage}
-                username={element.username}
-                date={element.date}
-              />
-            );
+            return <HomeBlogCard key={element.id} blog={element} />;
           })}
       </div>
+      <PaginationRounded
+        pageNumber={pageNumber}
+        pageSize={pageSize}
+        onChangePage={fetchSearchedBlogs}
+        isLastPage={isLastPage}
+        totalElements={totalElements}
+        totalPages={totalPages}
+      />
     </div>
   );
 }

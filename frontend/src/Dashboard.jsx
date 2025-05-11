@@ -5,62 +5,59 @@ import { extractParagraphs } from "./util/ExtractParagraphs";
 import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
+import {
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Pagination,
+  Select,
+} from "@mui/material";
+import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
+import Cookies from "js-cookie";
 
-function Dashboard({ onLogin }) {
+function Dashboard() {
   const [myBlogs, setMyBlogs] = useState([]);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(ConstBlogPageSize[0]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [last, setLast] = useState(false);
+  const user = JSON.parse(Cookies.get("user"));
 
-  useEffect(() => {
+  async function fetchData(pageN,pageS) {
 
-    async function fetchData() {
-      try {
-        const result = await fetch(
-          `${API_BASE_URL}/blog/get-all-of-user`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: localStorage.getItem("token"),
-            },
-          }
-        );
+    try {
+      const result = await fetch(`${API_BASE_URL}/blog/get-all-of-user?userId=${user.id}&pageNumber=${pageN}&pageSize=${pageS}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: Cookies.get("token"),
+        },
+      });
 
-        const resultData = await handleResponseFromFetchBlog(result, onLogin) // Parse the text from the response
-        const sortAndFormatDates = () => {
-
-          return resultData
-            .sort((a, b) => new Date(b.time) - new Date(a.time))
-            .map(blog => {
-              const date = new Date(blog.time);
-              const options = { day: '2-digit', month: 'long', year: 'numeric' };
-              const content = extractParagraphs(blog.content);
-
-              return {
-                id: blog.id,
-                coverImage: blog.coverImage,
-                title: blog.title,
-                content: content,
-                userImage: blog.userPhoto,
-                username: blog.userName,
-                date: date.toLocaleDateString('en-US', options)
-              };
-            });
-        }
-        setMyBlogs(sortAndFormatDates());
-      
-      } catch (error) {
-        console.error("There has been a problem with fetch operation:", error);
-      }
+      const resultData = await handleResponseFromFetchBlog(result); // Parse the text from the response
+      setMyBlogs(resultData.content); 
+      setLast(resultData.lastPage);
+      setPage(resultData.pageNumber + 1);
+      setTotalPages(resultData.totalPages);
+      setTotalElements(resultData.totalElements);
+      setRowsPerPage(resultData.pageSize);
+    } catch (error) {
+      console.error("There has been a problem with fetch operation:", error);
     }
-    fetchData();
-    setLoading(false)
+  }
+
+  
+  useEffect(() => {
+    fetchData(page-1,rowsPerPage);
+    setLoading(false);
   }, []);
 
   const createBlog = () => {
     navigate("/create-blog");
   };
-
 
   return (
     <div className="flex flex-col mx-4 my-8">
@@ -71,27 +68,59 @@ function Dashboard({ onLogin }) {
         Create blog
       </button>
 
-      <p className="text-2xl font-bold my-5">My blogs</p>
+      <p className="text-2xl font-bold my-5">Recent blogs</p>
       <div className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-
         {myBlogs &&
           myBlogs.map((element) => {
             return (
               <HomeBlogCard
                 key={element.id}
-                id={element.id}
-                coverImage={element.coverImage}
-                title={element.title}
-                content={element.content}
-                userImage={"null"}
-                username={null}
-                date={element.date}
+                blog={element}
+                // id={element.id}
+                // coverImage={element.coverImage}
+                // title={element.title}
+                // content={element.content}
+                // userImage={"null"}
+                // username={null}
+                // date={element.date}
               />
-            )
-          })
-        }
-        {loading ?
-          <LoadingIndicator /> : <></>}
+            );
+          })}
+        {loading ? <LoadingIndicator /> : <></>}
+      </div>
+      <div className="flex justify-center items-center mt-12 mb-5">
+        <FormControl sx={{ m: 1, minWidth: 80 }}>
+          <InputLabel id="select-page-size">Page Size</InputLabel>
+          <Select
+            labelId="select-page-size"
+            label="Blogs per page"
+            autoWidth
+            size="small"
+            value={rowsPerPage}
+            onChange={(e) => fetchBlog(page - 1, e.target.value)}
+          >
+            <MenuItem value={ConstBlogPageSize[0]}>
+              {ConstBlogPageSize[0]}
+            </MenuItem>
+            <MenuItem value={ConstBlogPageSize[1]}>
+              {ConstBlogPageSize[1]}
+            </MenuItem>
+            <MenuItem value={ConstBlogPageSize[2]}>
+              {ConstBlogPageSize[2]}
+            </MenuItem>
+          </Select>
+        </FormControl>
+        <Pagination
+          count={totalPages}
+          shape="rounded"
+          // variant="outlined"
+          color="primary"
+          page={page}
+          showFirstButton={true}
+          showLastButton={!last}
+          onChange={(_e, value) => fetchBlog(value - 1, rowsPerPage)}
+        />
+        <p>Total {totalElements}</p>
       </div>
     </div>
   );

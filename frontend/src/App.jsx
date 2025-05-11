@@ -1,53 +1,94 @@
+import React, { useContext, Suspense, useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AuthContext } from "./contexts/AuthContext";
 import NavBar from "./components/NavBar";
-import Login from "./Login";
-import { BrowserRouter, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
-import Register from "./Register";
-import { useEffect, useState } from "react";
-import CreateBlog from "./CreateBlog";
-import Home from "./Home";
-import Dashboard from "./Dashboard";
-import Profile from "./Profile";
-import BlogReader from './BlogReader';
-import Search from "./Search";
-import EditBlog from "./EditBlog";
+import Footer from "./components/Footer";
+import RegisterDialog from "./components/RegisterDialog";
+import LoginDialog from "./components/LoginDialog";
+
+// Lazy load components
+const LandingPage = React.lazy(() => import("./LandingPage"));
+const Search = React.lazy(() => import("./Search"));
+const BlogReader = React.lazy(() => import("./BlogReader"));
+const Home = React.lazy(() => import("./Home"));
+const Dashboard = React.lazy(() => import("./Dashboard"));
+const Profile = React.lazy(() => import("./Profile"));
+const CreateBlog = React.lazy(() => import("./CreateBlog"));
+const EditBlog = React.lazy(() => import("./EditBlog"));
+const Settings = React.lazy(() => import("./Settings"));
+const About = React.lazy(() => import("./About"));
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const { isAuthenticated } = useContext(AuthContext);
 
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
-  useEffect(() => {
-    //Check status of blog api request user is authorised or not
-    const storedToken = localStorage.getItem("token");
-    if (storedToken !== token) {
-      setToken(storedToken);
-    }
+  const handleChangeFromRegisterToLogin = () => {
+    setRegisterOpen(false);
+    setLoginOpen(true);
+  };
 
-  }, [token]);
+  const handleChangeFromLoginToRegister = () => {
+    setRegisterOpen(true);
+    setLoginOpen(false);
+  };
+
+  const handleRegisterClickOpen = () => setRegisterOpen(true);
+
+  const handleLoginClickOpen = () => setLoginOpen(true);
+
+  const handleRegisterClose = () => setRegisterOpen(false);
+
+  const handleLoginClose = () => setLoginOpen(false);
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/search" element={<> <NavBar /> <Search onLogin={() => setToken(localStorage.getItem("token"))}/></>} />
-        <Route path="/blog/:id" element={<> <NavBar /> <BlogReader onLogin={() => setToken(localStorage.getItem("token"))}/> </>} />
-        {token ? (
-          <>
-            <Route path="/*" element={<> <NavBar /> <Home onLogin={() => setToken(localStorage.getItem("token"))}/> </>} />
-            <Route path="/home" element={<> <NavBar /> <Home onLogin={() => setToken(localStorage.getItem("token"))}/>  </>} />
-            <Route path="/dashboard" element={<><NavBar /><Dashboard onLogin={() => setToken(localStorage.getItem("token"))}/></>} />
-            <Route path="/profile" element={<><NavBar /><Profile onLogin={() => setToken(localStorage.getItem("token"))}/></>} />
-            <Route path="/create-blog" element={<><NavBar /><CreateBlog onLogin={() => setToken(localStorage.getItem("token"))}/></>} />
-            <Route path="/edit-blog/:id" element={<><NavBar /><EditBlog onLogin={() => setToken(localStorage.getItem("token"))}/></>} />
-          </>
-        ) : (
-          <>
-            <Route path="/register" element={<Register onLogin={() => setToken(localStorage.getItem("token"))} />} />
-            <Route path="/*" element={<Login onLogin={() => setToken(localStorage.getItem("token"))} />} />
-          </>
-        )}
-      </Routes>
+      <Suspense fallback={<div>Loading...</div>}>
+        <NavBar openLoginDialog={handleLoginClickOpen} />
+        <Routes>
+          <Route path="/about" element={<About/>} />
+          {/* /* Protected Routes */}
+          {isAuthenticated ? (
+            <>
+              <Route path="/*" element={<Home />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/create-blog" element={<CreateBlog />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/blog/:id" element={<BlogReader />} />
+              <Route path="/edit-blog/:id" element={<EditBlog />} />
+            </>
+          ) : (
+            <>
+              {/* Public Routes */}
+              <Route
+                path="/*"
+                element={
+                  <LandingPage openRegisterDialog={handleRegisterClickOpen} />
+                }
+              />
+              <Route path="/search" element={<Search />} />
+              <Route path="/blog/:id" element={<BlogReader />} />
+            </>
+          )}
+        </Routes>
+        <Footer />
+        <LoginDialog
+          open={loginOpen}
+          onClose={handleLoginClose}
+          onChangeRegister={handleChangeFromLoginToRegister}
+        />
+        <RegisterDialog
+          open={registerOpen}
+          onClose={handleRegisterClose}
+          onChangeLogin={handleChangeFromRegisterToLogin}
+        />
+      </Suspense>
     </BrowserRouter>
   );
 }
-
 
 export default App;

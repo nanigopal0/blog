@@ -24,7 +24,8 @@ public class BlogData {
     @NonNull
     private String category;
     private LocalDateTime time;
-    private User user;
+    private String userId;
+//    private User user;
     private int like;
     private List<String> comment;
 }

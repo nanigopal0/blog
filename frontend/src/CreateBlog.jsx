@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { useNavigate } from "react-router-dom";
@@ -6,10 +13,20 @@ import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import { uploadImage } from "./util/UploadImageCloudinary";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
+import {
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { AuthContext } from "./contexts/AuthContext";
+import Cookies from "js-cookie";
 
-
-
-function CreateBlog({onLogin}) {
+function CreateBlog() {
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
   const [blogTitle, setBlogTitle] = useState("");
@@ -18,7 +35,40 @@ function CreateBlog({onLogin}) {
   const [images, setImages] = useState([]);
   const quillRef = useRef(null);
   const navigate = useNavigate();
-  const [loading,setLoading]= useState(false);
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const { authToken, isAuthenticated, logout } = useContext(AuthContext);
+  const user = JSON.parse(Cookies.get("user"));
+
+  // Ensure the Quill editor has the desired minimum height and allows dynamic resizing.
+  useEffect(() => {
+    if (quillRef.current) {
+      const editor = quillRef.current.getEditor();
+      editor.root.style.minHeight = "24rem";
+      editor.root.style.resize = "vertical";
+      editor.root.style.overflow = "auto";
+    }
+    getCategoriesFromServer();
+  }, []);
+
+  const getCategoriesFromServer = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/category/all`, {
+        method: "GET",
+        headers: {
+          Authorization: authToken,
+        },
+      });
+      if (!response.ok) {
+        logout();
+      }
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const imageHandler = useCallback(() => {
     const input = document.createElement("input");
@@ -38,7 +88,6 @@ function CreateBlog({onLogin}) {
       const Image = Quill.import("formats/image");
       Image.sanitize = () => objectURL; // You can modify the URL here
       editor.insertEmbed(range.index, "image", objectURL);
-      console.log(objectURL);
     };
   }, []);
 
@@ -48,12 +97,11 @@ function CreateBlog({onLogin}) {
         container: [
           ["bold", "italic", "underline", "strike"],
           ["blockquote", "code-block"],
-          // [{ header: 1 }, { header: 2 }],
           [{ list: "ordered" }, { list: "bullet" }, { list: "check" }],
-          [{ script: "sub" }, { script: "super" }], // superscript/subscript
+          [{ script: "sub" }, { script: "super" }],
           [{ indent: "-1" }, { indent: "+1" }],
           [{ header: [1, 2, 3, 4, 5, 6, false] }],
-          [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+          [{ color: [] }, { background: [] }],
           [{ font: [] }],
           [{ align: [] }],
           ["link", "image", "formula"],
@@ -64,12 +112,12 @@ function CreateBlog({onLogin}) {
         },
       },
     }),
-    []
+    [imageHandler]
   );
 
   const handleCreateBlogButton = async () => {
+    // if(selectedCategory == 0 ) return;
     let content = value;
-
     const coverImageUrl = await uploadImage(image);
     const uploadPromises = images.map(async (element) => {
       const url = await uploadImage(element.file);
@@ -82,15 +130,16 @@ function CreateBlog({onLogin}) {
     try {
       // Wait for all image uploads to complete
       const uploadedImages = await Promise.all(uploadPromises);
-
       uploadedImages.forEach(({ oldUrl, newUrl }) => {
         content = content.replace(oldUrl, newUrl);
       });
-
+      console.log("first");
       const data = {
         coverImage: coverImageUrl,
         title: blogTitle,
         content: content,
+        userId: user.id,
+        categoryId: categories[selectedCategory].id,
       };
       if (data.content && data.coverImage && data.title) createBlogInDB(data);
       setLoading(false);
@@ -101,23 +150,27 @@ function CreateBlog({onLogin}) {
 
   const createBlogInDB = async (data) => {
     try {
-      console.log(data);
-      const response = await fetch(
-        `${API_BASE_URL}/blog/add`,
-        {
-          method: "POST",
-          body: JSON.stringify(data),
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: localStorage.getItem("token"),
-          },
-        }
-      );
-     
-      await handleResponseFromFetchBlog(response,onLogin); // Parse the text from the response
-      navigate("/home")
+      const response = await fetch(`${API_BASE_URL}/blog/add`, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: authToken,
+        },
+      });
+
+      if (response.status == 401) {
+        //Unauthorised as token invalid go the login page
+        logout();
+        // navigate("/");
+      }
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      } else {
+        console.log(await response.text());
+        navigate("/home");
+      }
     } catch (error) {
-      
       console.error("There has been a problem with fetch operation:", error);
     }
   };
@@ -127,87 +180,135 @@ function CreateBlog({onLogin}) {
   };
 
   return (
-    <div className="m-4 flex flex-col items-center">
-      {/* cover image input starts here*/}
-      <div
+    <Box
+      sx={{
+        m: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      {/* Cover Image Input */}
+      <Box
         onClick={handleCoverImageClick}
-        className="h-48 w-4/5 md:w-1/2 flex justify-center ">
-        <div className="h-48 border flex items-center justify-center border-gray-400 w-full rounded-md overflow-hidden">
-          {previewImage ? (
-            <img
-              className=" h-48 w-full object-cover"
-              src={previewImage}
-              alt=""
-            />
-          ) : (
-            <p className="font-medium">Click to choose a cover image</p>
-          )}
-        </div>
+        sx={{
+          height: "12rem",
+          width: "80%",
+          // Using same width as your current code (w-4/5 md:w-1/2).
+          maxWidth: { xs: "80%", md: "50%" },
+          mb: 4,
+          border: "1px solid gray",
+          borderRadius: 2,
+          overflow: "hidden",
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        {previewImage ? (
+          <Box
+            component="img"
+            src={previewImage}
+            alt="Cover"
+            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            Click to choose a cover image
+          </Typography>
+        )}
         <input
           type="file"
           ref={coverImageInputRef}
-          className="hidden"
-          onChange={(f) => {
-            setImage(f.target.files[0]);
-            setPreviewImage(URL.createObjectURL(f.target.files[0]));
+          style={{ display: "none" }}
+          onChange={(e) => {
+            setImage(e.target.files[0]);
+            setPreviewImage(URL.createObjectURL(e.target.files[0]));
           }}
         />
-      </div>
+      </Box>
 
-      {/* cover image input ends here */}
-      {/* Blog title content  starts here*/}
+      {/* Blog Title and Category */}
+      <Box sx={{ width: "80%", maxWidth: { xs: "80%", md: "66%" }, mb: 4 }}>
+        <FormControl fullWidth sx={{ mb: 3 }}>
+          <InputLabel id="category-label">Select a category</InputLabel>
+          <Select
+            labelId="category-label"
+            value={selectedCategory}
+            label="Select a category"
+            onChange={(e) => setSelectedCategory(Number(e.target.value))}
+          >
+            {categories.map((category, index) => (
+              <MenuItem key={index} value={index}>
+                {category.category}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      <div className="w-4/5 lg:w-2/3">
-        <p className="mt-3 text-start text-lg font-medium ">Title</p>
-        <textarea
-          type="text"
+        <TextField
+          fullWidth
           value={blogTitle}
-          onChange={(b) => setBlogTitle(b.target.value)}
-          className="max-h-24 border rounded-lg w-full my-2 p-2 border-black"
+          onChange={(e) => setBlogTitle(e.target.value)}
+          label="Title"
           placeholder="Enter title"
+          variant="outlined"
+          multiline
+          sx={{ mb: 3 }}
         />
+      </Box>
 
-        <p className="text-start text-lg font-medium ">Content</p>
-        <div className="h-48 my-5" onClick={() => quillRef.current}>
-          <ReactQuill
-            ref={quillRef}
-            className="h-1/2 lg:h-3/4"
-            theme="snow"
-            value={value}
-            onChange={setValue}
-            placeholder="Start typing..."
-            modules={customReactQuillModule}
-          />
-        </div>
+      {/* Blog Content */}
+      <Box sx={{ width: "100%", maxWidth: { xs: "80%", md: "66%" }, mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Content
+        </Typography>
+        <ReactQuill
+          ref={quillRef}
+          className="resize overflow-auto min-h-96 max-h-screen max-w-6xl min-w-96"
+          theme="snow"
+          value={value}
+          onChange={setValue}
+          placeholder="Start typing..."
+          modules={customReactQuillModule}
+          style={{ minHeight: "24rem" }}
+        />
+      </Box>
 
-        {/* Blog content ends here */}
-      </div>
-      {loading? <LoadingIndicator/> : <></>}
-      <button
-        className="my-4 w-1/2 bg-blue-700 text-white p-2 rounded-md"
+      {loading && <LoadingIndicator />}
+
+      {/* Buttons */}
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{ my: 2, width: "50%" }} // same width as before
         onClick={() => {
           if (blogTitle && image && value && value !== "<p><br></p>") {
             setLoading(true);
             handleCreateBlogButton();
           } else {
             console.log("Invalid input");
-            return;
           }
         }}
       >
         Create Blog
-      </button>
+      </Button>
 
-      <button className="my-4 w-1/2 bg-red-500 text-white p-2 rounded-md"
-      onClick={()=>{
-        setImage("");
-        setPreviewImage("");
-        setBlogTitle("");
-        setValue("");
-      }}>
+      <Button
+        variant="contained"
+        color="error"
+        sx={{ my: 2, width: "50%" }} // same width as before
+        onClick={() => {
+          setImage("");
+          setPreviewImage("");
+          setBlogTitle("");
+          setValue("");
+        }}
+      >
         Clear
-      </button>
-    </div>
+      </Button>
+    </Box>
   );
 }
 

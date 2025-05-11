@@ -7,3 +7,8 @@ export const passwordValidate = (password) => {
     return passwordRegex.test(password);
 }
 
+export  const fullNameValidate = (name) => {
+    const fullNameRegex =
+      /^[A-Za-z]{2,}(?:[-'][A-Za-z]+)?\s[A-Za-z]{2,}(?:[-'][A-Za-z]+)?(?:\s[A-Za-z]{2,}(?:[-'][A-Za-z]+)?)*$/;
+    return fullNameRegex.test(name);
+  };

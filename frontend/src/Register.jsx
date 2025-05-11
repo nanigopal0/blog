@@ -3,9 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
 import { emailValidate, passwordValidate } from "./util/RegisterInputValidate";
+import { Button } from "@mui/material";
+import RegisterDialog from "./components/RegisterDialog";
 
 
-function Register({ onLogin }) {
+function Register() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,10 +39,10 @@ function Register({ onLogin }) {
           throw new Error("Invalid credentials");
         }
         const resultData = await result.text(); // Parse the text from the response
-        localStorage.setItem("token", resultData);
-        onLogin();
+        // localStorage.setItem("token", "Bearer "+resultData);
+        // onLogin();
         setLoading(false)
-        navigate('/home');
+        navigate('/login');
       } else throw new Error("Invalid password")
     } catch (error) {
       setLoading(false)
@@ -56,10 +58,23 @@ function Register({ onLogin }) {
     return !fullNameValidate() || !emailValidate(email) || !passwordValidate(password) || confirmPassword !== password;
   }
 
+  const [open, setOpen] = useState(false);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
   return (
 
     <div className="h-screen  bg-cover bg-center w-full" style={{ backgroundImage: "url('src/assets/login.jpg')" }}>
-
+<Button variant="outlined" onClick={handleClickOpen}>
+        Open form dialog
+      </Button>
+      <RegisterDialog open={open} onClose={handleClose} />
       <div className="flex justify-center items-center h-full  lg:me-10">
         <div className="bg-purple-200 bg-opacity-70 border-2 border-white rounded-xl lg:w-2/5 lg:h-5/6 sm:w-4/6 p-5">
           {loading ? <LoadingIndicator /> : <></>}

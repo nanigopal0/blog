@@ -6,7 +6,7 @@ import { uploadImage } from "./util/UploadImageCloudinary";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
 
-function EditBlog({onLogin}) {
+function EditBlog() {
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
   const [blogTitle, setBlogTitle] = useState("");
@@ -35,7 +35,7 @@ function EditBlog({onLogin}) {
           }
         );
 
-        const resultData = await handleResponseFromFetchBlog(result,onLogin); // Parse the text from the response
+        const resultData = await handleResponseFromFetchBlog(result); // Parse the text from the response
         setBlog(resultData);
         setImage(resultData.blog.coverImage);
         setPreviewImage(resultData.blog.coverImage);
@@ -147,7 +147,7 @@ function EditBlog({onLogin}) {
         }
       );
   
-      const resultData = await handleResponseFromFetchBlog(response,onLogin) // Parse the text from the response 
+      const resultData = await handleResponseFromFetchBlog(response) // Parse the text from the response 
       setLoading(false)
       console.log(resultData);
       navigate("/home");

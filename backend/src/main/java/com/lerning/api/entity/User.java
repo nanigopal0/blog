@@ -28,6 +28,6 @@ public class User {
     private String email;
     private String password;
     private String roles;   //Role of the user like USER, ADMIN
-    @DocumentReference(collection = "blogData")
-    private List<BlogData> blogs;
+//    @DocumentReference(collection = "blogData")
+    private List<String> blogId;
 }

@@ -3,8 +3,10 @@ package com.lerning.api.service;
 import com.lerning.api.entity.BlogData;
 import com.lerning.api.entity.GetAllBlog;
 import com.lerning.api.entity.User;
+import com.lerning.api.exception.UserNotFoundException;
 import com.lerning.api.repositories.BlogRepo;
 import com.lerning.api.repositories.UserRepo;
+import com.mongodb.client.model.Aggregates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -34,16 +37,19 @@ public class BlogService {
     @Transactional
     public BlogData saveBlogData(BlogData blog) {
         blog.setTime(LocalDateTime.now());
+        blog.setId(UUID.randomUUID().toString());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         Optional<User> userOp = userRepo.findByEmail(email);
-        BlogData savedBlog = blogRepo.save(blog);
         if (userOp.isPresent()) {
             User user = userOp.get();
-            user.getBlogs().add(savedBlog);
+            blog.setUserId(user.getId());
+            blog.setCategory("demo");
+            BlogData savedBlog = blogRepo.save(blog);
+            user.getBlogId().add(savedBlog.getId());
             userRepo.save(user);
-        }
-        return savedBlog;
+            return savedBlog;
+        } else throw new UserNotFoundException("Failed to create blog!");
     }
 
     public List<BlogData> getAllBlogs() {
@@ -53,7 +59,8 @@ public class BlogService {
     public List<BlogData> getAllBlogsOfUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> userOp = userRepo.findByEmail(email);
-        return userOp.map(user -> blogRepo.findAllById(user.getBlogs().stream().map(BlogData::getId).toList())).orElseGet(ArrayList::new);
+
+        return userOp.map(user -> blogRepo.findAllById(user.getBlogId().stream().map(BlogData::getId).toList())).orElseGet(ArrayList::new);
     }
 
     public GetAllBlog geBlogDataById(String id) throws Exception {
@@ -119,7 +126,15 @@ public class BlogService {
         try {
             List<BlogData> blogs = blogRepo.findAllByCategory(category);
             if (blogs.isEmpty()) throw new IllegalArgumentException("Not found");
-            return blogs.stream().map(blogData -> new GetAllBlog(blogData.getId(), blogData.getUser().getUsername(), blogData.getUser().getPhoto(), blogData)).collect(Collectors.toList());
+            return blogs.stream().map(blogData -> {
+                Optional<User> userOptional = userRepo.findById(blogData.getUserId());
+                if (userOptional.isPresent()) {
+                    User user = userOptional.get();
+                    return new GetAllBlog(blogData.getId(), user.getUsername(), user.getPhoto(), blogData);
+                } else return new GetAllBlog(null, null, null, blogData);
+            }).collect(Collectors.toList());
+
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

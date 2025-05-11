@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import PropTypes from "prop-types";
 import htmlTruncate from 'html-truncate';
 
-function HomeBlogCard(props) {
+function HomeBlogCard({blog}) {
   const navigate = useNavigate();
   
   const navigateReader = (id) => {
-    const data = { isBlogOfCurrentUser: (props.username ? false : true)};
-    navigate(`/blog/${id}`,{state:data});
+    // const data = { isBlogOfCurrentUser: (props.username ? false : true)};
+    // navigate(`/blog/${id}`,{state:data});
+    navigate(`/blog/${id}`,{state:blog});
+
   };
 
   const truncateHtmlContent = (htmlContent, maxLength = 80) => {
@@ -21,44 +22,44 @@ function HomeBlogCard(props) {
 
     <div
       className=" hover:shadow-gray-600 shadow-md w-full border border-gray-400 overflow-auto rounded-lg"
-      onClick={() => navigateReader(props.id)}
+      onClick={() => navigateReader(blog.id)}
     >
       <div title="cover image">
         <img
           className="h-48 w-full object-cover"
-          src={props.coverImage}
+          src={blog.coverImage}
           alt=""
         />
       </div>
       <div className=" bg-white  p-4 flex flex-col justify-between leading-normal">
         <div className="mb-4">
           <div className="text-gray-900 font-bold text-xl mb-2">
-            {props.title}
+            {blog.title}
           </div>
           <div
             className="text-gray-700 text-base"
-            dangerouslySetInnerHTML={{ __html: truncateHtmlContent(props.content) }}
+            dangerouslySetInnerHTML={{ __html: truncateHtmlContent(blog.content) }}
           ></div>
         </div>
         <div className="flex items-center">
-          {props.userImage !== "null" ? (
+          {blog.userPhoto !== "null" ? (
             <img
               className="w-10 h-10 rounded-full mr-4"
-              src={`${props.userImage ? props.userImage : "/src/assets/person.svg"}`}
+              src={`${blog.userPhoto ? blog.userPhoto : "/src/assets/person.svg"}`}
               alt="avatar"
             />
           ) : (
             <> </>
           )}
           <div className="text-sm">
-            {props.username ? (
+            {blog.userFullName ? (
               <p className="text-gray-900 font-semibold leading-none">
-                {props.username}
+                {blog.userFullName}
               </p>
             ) : (
               <></>
             )}
-            <p className="text-gray-600">{props.date}</p>
+            <p className="text-gray-600">{blog.time}</p>
           </div>
         </div>
       </div>
@@ -66,23 +67,4 @@ function HomeBlogCard(props) {
   );
 }
 
-HomeBlogCard.propTypes = {
-  id: PropTypes.string,
-  coverImage: PropTypes.string,
-  title: PropTypes.string,
-  content: PropTypes.string,
-  date: PropTypes.string,
-  userImage: PropTypes.string,
-  username: PropTypes.string,
-};
-
-HomeBlogCard.defaultProps = {
-  id: "0",
-  coverImage: null,
-  title: null,
-  content: null,
-  date: null,
-  userImage: null,
-  username: null,
-};
 export default HomeBlogCard;
