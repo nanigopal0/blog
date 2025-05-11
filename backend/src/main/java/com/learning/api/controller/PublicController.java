@@ -1,11 +1,11 @@
-package com.lerning.api.controller;
+package com.learning.api.controller;
 
-import com.lerning.api.entity.GetAllBlog;
-import com.lerning.api.entity.User;
-import com.lerning.api.jwt.JwtService;
-import com.lerning.api.service.BlogService;
-import com.lerning.api.service.CustomUserDetailService;
-import com.lerning.api.service.UserService;
+import com.learning.api.entity.GetAllBlog;
+import com.learning.api.entity.User;
+import com.learning.api.jwt.JwtService;
+import com.learning.api.service.BlogService;
+import com.learning.api.service.CustomUserDetailService;
+import com.learning.api.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

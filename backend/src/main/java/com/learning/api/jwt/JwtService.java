@@ -1,4 +1,4 @@
-package com.lerning.api.jwt;
+package com.learning.api.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

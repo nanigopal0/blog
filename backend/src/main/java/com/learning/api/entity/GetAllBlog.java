@@ -1,4 +1,4 @@
-package com.lerning.api.entity;
+package com.learning.api.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

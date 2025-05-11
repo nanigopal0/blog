@@ -1,6 +1,6 @@
-package com.lerning.api.repositories;
+package com.learning.api.repositories;
 
-import com.lerning.api.entity.BlogData;
+import com.learning.api.entity.BlogData;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;

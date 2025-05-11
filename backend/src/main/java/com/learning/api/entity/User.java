@@ -1,4 +1,4 @@
-package com.lerning.api.entity;
+package com.learning.api.entity;
 
 import com.mongodb.lang.NonNull;
 import lombok.AllArgsConstructor;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
+
 import java.util.List;
 
 
@@ -28,6 +28,6 @@ public class User {
     private String email;
     private String password;
     private String roles;   //Role of the user like USER, ADMIN
-//    @DocumentReference(collection = "blogData")
+    //    @DocumentReference(collection = "blogData")
     private List<String> blogId;
 }

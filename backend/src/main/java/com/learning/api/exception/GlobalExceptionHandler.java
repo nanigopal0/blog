@@ -1,4 +1,4 @@
-package com.lerning.api.exception;
+package com.learning.api.exception;
 
 
 import lombok.extern.slf4j.Slf4j;

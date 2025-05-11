@@ -1,8 +1,7 @@
-package com.lerning.api.service;
+package com.learning.api.service;
 
-import com.lerning.api.entity.User;
-import com.lerning.api.repositories.UserRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.learning.api.entity.User;
+import com.learning.api.repositories.UserRepo;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,8 +12,11 @@ import java.util.Optional;
 @Service
 public class CustomUserDetailService implements UserDetailsService {
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserRepo userRepo;
+
+    public CustomUserDetailService(UserRepo userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {

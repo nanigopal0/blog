@@ -1,8 +1,8 @@
-package com.lerning.api.controller;
+package com.learning.api.controller;
 
-import com.lerning.api.entity.BlogData;
-import com.lerning.api.entity.GetAllBlog;
-import com.lerning.api.service.BlogService;
+import com.learning.api.entity.BlogData;
+import com.learning.api.entity.GetAllBlog;
+import com.learning.api.service.BlogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

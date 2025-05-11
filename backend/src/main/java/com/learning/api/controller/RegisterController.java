@@ -1,7 +1,7 @@
-package com.lerning.api.controller;
+package com.learning.api.controller;
 
-import com.lerning.api.entity.User;
-import com.lerning.api.service.UserService;
+import com.learning.api.entity.User;
+import com.learning.api.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class RegisterController {
     @GetMapping("get")
     public ResponseEntity<User> getUserByEmail() {
         try {
-            User user = userService.findUserByEmail().get();
+            User user = userService.findUserByEmail();
             return ResponseEntity.of(Optional.of(user));
         } catch (Exception e) {
             logger.error("getUserByEmail: User not found! ${}", e.getMessage());

@@ -1,4 +1,4 @@
-package com.lerning.api.exception;
+package com.learning.api.exception;
 
 
 public class UserNotFoundException extends RuntimeException {

@@ -1,8 +1,8 @@
-package com.lerning.api.configuration;
+package com.learning.api.configuration;
 
-import com.lerning.api.jwt.JwtAuthEntryPoint;
-import com.lerning.api.jwt.JwtAuthFilter;
-import com.lerning.api.service.CustomUserDetailService;
+import com.learning.api.jwt.JwtAuthEntryPoint;
+import com.learning.api.jwt.JwtAuthFilter;
+import com.learning.api.service.CustomUserDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

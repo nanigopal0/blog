@@ -1,6 +1,6 @@
-package com.lerning.api.repositories;
+package com.learning.api.repositories;
 
-import com.lerning.api.entity.User;
+import com.learning.api.entity.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -12,5 +12,5 @@ public interface UserRepo extends MongoRepository<User, String> {
 
     Optional<User> findByEmail(String email);
 
-    Optional<List<User>> findAllByName(String name);
+    List<User> findAllByName(String name);
 }

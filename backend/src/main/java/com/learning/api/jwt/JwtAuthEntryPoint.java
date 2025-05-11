@@ -1,4 +1,4 @@
-package com.lerning.api.jwt;
+package com.learning.api.jwt;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

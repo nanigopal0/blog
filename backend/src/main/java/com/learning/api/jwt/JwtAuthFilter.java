@@ -1,6 +1,6 @@
-package com.lerning.api.jwt;
+package com.learning.api.jwt;
 
-import com.lerning.api.service.CustomUserDetailService;
+import com.learning.api.service.CustomUserDetailService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import jakarta.servlet.FilterChain;
