@@ -97,6 +97,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
       maxWidth="xs"
       open={open}
       onClose={handleClose}
+      color="background.paper"
       slotProps={{
         paper: {
           component: "form",
@@ -105,6 +106,9 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
       }}
     >
       <LinearProgress hidden={!loading} />
+       <Alert severity="warning">
+          Enable Cookie to use this application
+        </Alert>
       <DialogTitle>
         <Typography
           variant="h6"
@@ -127,6 +131,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           size="small"
           margin="normal"
           onChange={handleEmailChange}
+          
           multiline={false}
           id="email"
           name="email"

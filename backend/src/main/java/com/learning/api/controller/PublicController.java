@@ -4,7 +4,6 @@ import com.learning.api.dto.BaseUserDTO;
 import com.learning.api.entity.User;
 import com.learning.api.exception.UserAlreadyExistException;
 import com.learning.api.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

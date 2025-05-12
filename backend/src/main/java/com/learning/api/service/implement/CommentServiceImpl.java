@@ -6,14 +6,12 @@ import com.learning.api.exception.BlogNotFoundException;
 import com.learning.api.exception.CommentNotFoundException;
 import com.learning.api.repositories.BlogRepo;
 import com.learning.api.repositories.CommentRepo;
-import com.learning.api.repositories.UserRepo;
-import com.learning.api.service.BlogService;
 import com.learning.api.service.CommentService;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.time.LocalDateTime;
 
@@ -22,15 +20,14 @@ import java.time.LocalDateTime;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepo commentRepo;
-    private final UserRepo userRepo;
+  
     private final BlogRepo blogRepo;
-    private final BlogService blogService;
+   
 
-    public CommentServiceImpl(CommentRepo commentRepo, UserRepo userRepo, BlogRepo blogRepo, BlogService blogService) {
+    public CommentServiceImpl(CommentRepo commentRepo, BlogRepo blogRepo) {
         this.commentRepo = commentRepo;
-        this.userRepo = userRepo;
         this.blogRepo = blogRepo;
-        this.blogService = blogService;
+       
     }
 
 

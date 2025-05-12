@@ -3,7 +3,7 @@ package com.learning.api.service;
 import com.learning.api.dto.BaseUserDTO;
 import com.learning.api.dto.UserDTO;
 import com.learning.api.entity.User;
-import jakarta.servlet.http.HttpServletResponse;
+
 import org.bson.types.ObjectId;
 
 import java.util.List;

@@ -140,6 +140,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     >
       <LinearProgress hidden={!loading} />
 
+
       <DialogTitle>
         <Typography
           variant="h6"

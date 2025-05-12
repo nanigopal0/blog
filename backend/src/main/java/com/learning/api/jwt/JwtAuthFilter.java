@@ -28,23 +28,16 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
 
-    private final CustomUserDetailService userDetailService;
+  
     private final JwtService jwtService;
 
-    public JwtAuthFilter(CustomUserDetailService userDetailService, JwtService jwtService) {
-        this.userDetailService = userDetailService;
+    public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-//        String authHeader = request.getHeader("Authorization");
-//
-//        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
 
         String token = null;
         Cookie[] cookies = request.getCookies();
@@ -57,13 +50,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 
         try {
-//            String token = authHeader.substring(7);
+
             Claims jwtClaims = jwtService.getClaims(token);
             String username = jwtService.extractUsername(token);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-//                UserDetails userDetails = userDetailService.loadUserByUsername(username);
-//                if (userDetails != null && jwtService.isTokenValid(token)) {
+
                 if (jwtService.isTokenValid(token)) {
                     BaseUser user = new BaseUser();
                     user.setId(new ObjectId(jwtClaims.get("id", String.class)));

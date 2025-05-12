@@ -20,12 +20,10 @@ Welcome to the **Blog Application** – a full-stack application designed for bl
 - **React**: Dynamic and interactive user interfaces.
 
 ### **Backend**
-- **Java**: Handles the server-side logic and API integrations.
+- **Spring Boot**: Handles the server-side logic and API integrations.
 
 ### **Database**
 -  MongoDB Atlas
 -  Cloudinary(Store Images)
   
 ---
-
-## 📂 Project Structure

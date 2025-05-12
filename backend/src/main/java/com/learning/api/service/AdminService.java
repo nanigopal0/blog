@@ -1,7 +1,6 @@
 package com.learning.api.service;
 
 import com.learning.api.entity.Admin;
-import jakarta.servlet.http.HttpServletResponse;
 import org.bson.types.ObjectId;
 
 import java.util.List;
