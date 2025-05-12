@@ -1,12 +1,12 @@
-package com.learning.api.entity;
+package com.learning.api.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.learning.api.entity.BlogData;
+import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class GetAllBlog {
 
     private String userId;

@@ -17,7 +17,6 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { emailValidate, passwordValidate } from "../util/RegisterInputValidate";
 import { API_BASE_URL } from "../util/BaseUrl";
-import Cookies from "js-cookie";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 export default function LoginDialog({ open, onClose, onChangeRegister }) {
@@ -34,11 +33,10 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
     setLoading(true);
     const formData = new FormData(event.currentTarget);
     const formJson = Object.fromEntries(formData.entries());
-    console.log("Log in:", formJson);
+    // console.log("Log in:", formJson);
 
     serverLogin(formJson)
       .then((result) => {
-  
         saveResponseLocally(result);
         setLoading(false);
         // setErrorMessage(null);
@@ -63,14 +61,11 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
       throw new Error(await result.text() || "Invalid credentials");
     }
     if (result.status == 401) logout();
-    const dataresp = await result.text();
-    console.log(dataresp);
-    return dataresp; // Parse the text from the response
+    return await result.json();
   };
 
   const saveResponseLocally = (resultData) => {
-    // updateUserInfo(resultData.user);
-    // login("Bearer "+resultData.token);
+    updateUserInfo(resultData);
     login();
   };
 

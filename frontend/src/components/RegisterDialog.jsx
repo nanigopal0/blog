@@ -42,7 +42,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     const formJson = Object.fromEntries(formData.entries());
     formJson.name = formJson.fullName;
     delete formJson.fullName; // Remove the fullName key from the object
-    console.log("Registration Data:", formJson);
+    // console.log("Registration Data:", formJson);
 
     serverRegister(formJson)
       .then((result) => {
@@ -61,7 +61,6 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
   };
 
   const serverRegister = async (data) => {
-    console.log(JSON.stringify(data));
     const result = await fetch(`${API_BASE_URL}/public/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -19,12 +19,15 @@ public class JwtService {
     private final String SECRET = "ufhfirfkfrff3wHHfsrjfn48jhuIFEFfjai4343jffjfu3wjf9";
     private final long VALIDITY = 24 * 60 * 60 * 1000;
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(String username,String name,String id,String role,String email) {
         Map<String, String> claims = new HashMap<>();
-        claims.put("name", "name");
+        claims.put("name", name);
+        claims.put("id", id);
+        claims.put("role", role);
+        claims.put("username", username);
         return Jwts.builder()
                 .claims(claims)
-                .subject(userDetails.getUsername())
+                .subject(email)
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plusMillis(VALIDITY)))
                 .signWith(generateKey())
@@ -45,15 +48,12 @@ public class JwtService {
                 .getPayload();
     }
 
-
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    public boolean isTokenValid(String token, UserDetails userDetails) {
-        boolean isNotExpired = getClaims(token).getExpiration().after(new Date());
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && isNotExpired;
+    public boolean isTokenValid(String token) {
+        return getClaims(token).getExpiration().after(new Date());
     }
 
 

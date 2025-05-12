@@ -6,14 +6,20 @@ import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import LoadingIndicator from "./util/LoadingIndicator";
 import { API_BASE_URL } from "./util/BaseUrl";
 import {
+  Box,
+  Button,
+  CircularProgress,
   FormControl,
+  Grid,
   InputLabel,
   MenuItem,
   Pagination,
   Select,
+  Typography,
 } from "@mui/material";
 import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
 import Cookies from "js-cookie";
+import MediaCard from "./components/MediaCard";
 
 function Dashboard() {
   const [myBlogs, setMyBlogs] = useState([]);
@@ -26,19 +32,23 @@ function Dashboard() {
   const [last, setLast] = useState(false);
   const user = JSON.parse(Cookies.get("user"));
 
-  async function fetchData(pageN,pageS) {
-
+  async function fetchData(pageN, pageS) {
+    setLoading(true);
     try {
-      const result = await fetch(`${API_BASE_URL}/blog/get-all-of-user?userId=${user.id}&pageNumber=${pageN}&pageSize=${pageS}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Cookies.get("token"),
-        },
-      });
+      const result = await fetch(
+        `${API_BASE_URL}/blog/get-all-of-user?userId=${user.id}&pageNumber=${pageN}&pageSize=${pageS}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const resultData = await handleResponseFromFetchBlog(result); // Parse the text from the response
-      setMyBlogs(resultData.content); 
+      console.log(resultData);
+      setMyBlogs(resultData.content);
       setLast(resultData.lastPage);
       setPage(resultData.pageNumber + 1);
       setTotalPages(resultData.totalPages);
@@ -46,13 +56,13 @@ function Dashboard() {
       setRowsPerPage(resultData.pageSize);
     } catch (error) {
       console.error("There has been a problem with fetch operation:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
-  
   useEffect(() => {
-    fetchData(page-1,rowsPerPage);
-    setLoading(false);
+    fetchData(page - 1, rowsPerPage);
   }, []);
 
   const createBlog = () => {
@@ -60,34 +70,48 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col mx-4 my-8">
-      <button
-        className="p-2 border bg-gray-600 text-white rounded-lg"
-        onClick={createBlog}
+    <Box sx={{ padding: 4, height: "100vh" }}>
+      {/* Header Section */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 4,
+        }}
       >
-        Create blog
-      </button>
+        <Typography variant="h4" fontWeight="bold">
+          Dashboard
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={createBlog}
+          sx={{ textTransform: "none" }}
+        >
+          Create Blog
+        </Button>
+      </Box>
 
-      <p className="text-2xl font-bold my-5">Recent blogs</p>
+      {/* Recent Blogs Section */}
+      <Typography variant="h5" fontWeight="bold" sx={{ marginBottom: 2 }}>
+        Recent Blogs
+      </Typography>
+
       <div className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
         {myBlogs &&
           myBlogs.map((element) => {
             return (
-              <HomeBlogCard
+              <MediaCard
                 key={element.id}
                 blog={element}
-                // id={element.id}
-                // coverImage={element.coverImage}
-                // title={element.title}
-                // content={element.content}
-                // userImage={"null"}
-                // username={null}
-                // date={element.date}
               />
             );
           })}
         {loading ? <LoadingIndicator /> : <></>}
       </div>
+
+    
       <div className="flex justify-center items-center mt-12 mb-5">
         <FormControl sx={{ m: 1, minWidth: 80 }}>
           <InputLabel id="select-page-size">Page Size</InputLabel>
@@ -121,8 +145,9 @@ function Dashboard() {
           onChange={(_e, value) => fetchBlog(value - 1, rowsPerPage)}
         />
         <p>Total {totalElements}</p>
+       
       </div>
-    </div>
+    </Box>
   );
 }
 

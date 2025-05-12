@@ -1,151 +1,27 @@
 package com.learning.api.service;
 
+import com.learning.api.dto.BlogDataDTO;
+import com.learning.api.dto.PageResponse;
 import com.learning.api.entity.BlogData;
-import com.learning.api.entity.GetAllBlog;
-import com.learning.api.entity.User;
 import com.learning.api.exception.BlogNotFoundException;
-import com.learning.api.exception.UserNotFoundException;
-import com.learning.api.repositories.BlogRepo;
-import com.learning.api.repositories.UserRepo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.bson.types.ObjectId;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+public interface BlogService {
 
-@Component
-public class BlogService {
+    void createNewBlog(BlogData blog);
 
+    BlogDataDTO getBlogById(ObjectId id, String sortBy, String sortOrder, int pageNumber, int pageSize);
 
-    private final BlogRepo blogRepo;
-    private final UserRepo userRepo;
-    private final Logger logger = LoggerFactory.getLogger(BlogService.class);
+    void updateBlog(BlogDataDTO blog);
 
-    BlogService(BlogRepo blogRepo, UserRepo userRepo) {
-        this.blogRepo = blogRepo;
-        this.userRepo = userRepo;
-    }
+    void deleteBlog(ObjectId id) throws Exception;
 
-    @Transactional
-    public BlogData saveBlogData(BlogData blog) {
-        blog.setTime(LocalDateTime.now());
-        blog.setId(UUID.randomUUID().toString());
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        Optional<User> userOp = userRepo.findByEmail(email);
-        if (userOp.isPresent()) {
-            User user = userOp.get();
-            blog.setUserId(user.getId());
-            blog.setCategory("demo");
-            BlogData savedBlog = blogRepo.save(blog);
-            user.getBlogId().add(savedBlog.getId());
-            userRepo.save(user);
-            return savedBlog;
-        } else throw new UserNotFoundException("Failed to create blog!");
-    }
+    PageResponse<BlogDataDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize) throws Exception;
 
-    public List<BlogData> getAllBlogs() {
-        return blogRepo.findAll();
-    }
+    PageResponse<BlogDataDTO> getAllBlogsByCategory(ObjectId categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize);
 
-    public List<BlogData> getAllBlogsOfUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+    PageResponse<BlogDataDTO> getAllBlogsOfUser(ObjectId userid, String sortBy, String sortOrder, int pageNumber, int pageSize);
 
-        return blogRepo.findAllById(user.getBlogId());
-    }
-
-    public GetAllBlog geBlogDataById(String id) throws Exception {
-        List<GetAllBlog> blogs = getAllBlogsWithUserInfo();
-        Optional<BlogData> optionalBlog = blogRepo.findById(id);
-        if (optionalBlog.isPresent()) {
-            Optional<GetAllBlog> blog = blogs.stream().filter((b) -> b.getBlog().equals(optionalBlog.get())).findFirst();
-            if (blog.isPresent()) return blog.get();
-            else throw new Exception("Blog data not found");
-        } else throw new Exception("Blog data not found");
-    }
-
-    public BlogData updateBlog(String id, BlogData update) throws Exception {
-        BlogData blog = blogRepo.findById(id).orElseThrow(() -> new BlogNotFoundException(id));
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-        if (!user.getBlogId().contains(id)) throw new Exception("Invalid user");
-        if (update.getContent() != null) blog.setContent(update.getContent());
-        if (update.getTitle() != null) blog.setTitle(update.getTitle());
-        if (update.getCoverImage() != null) blog.setCoverImage(update.getCoverImage());
-        return blogRepo.save(blog);
-    }
-
-    @Transactional
-    public void deleteBlog(String id) throws Exception {
-        try {
-            // Get and check the block if exist or throw exception
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-            BlogData blog = blogRepo.findById(id).orElseThrow(() -> new BlogNotFoundException(id));
-            if (user.getBlogId().contains(blog.getId())) {
-                user.getBlogId().remove(id);
-                blogRepo.deleteById(id);
-                userRepo.save(user);
-            } else throw new Exception("Invalid user");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new Exception("Blog not found");
-        }
-
-    }
-
-    public List<GetAllBlog> searchBlogData(String title) throws Exception {
-        try {
-            Optional<List<BlogData>> blogsOptional = blogRepo.findAllByTitleContainingOrderByTimeDesc(title);
-            if (blogsOptional.isPresent()) {
-                List<BlogData> blogs = blogsOptional.get();
-                return blogs.stream().map(blog -> {
-                    Optional<User> userOp = userRepo.findById(blog.getUserId());
-                    if (userOp.isPresent()) {
-                        User user = userOp.get();
-                        return new GetAllBlog(user.getId(), user.getName(), user.getPhoto(), blog);
-                    }
-                    return null;
-                }).toList();
-            } else throw new Exception("Blog not found");
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            throw new Exception("Blog not found");
-        }
-    }
-
-    public List<GetAllBlog> searchByCategory(String category) {
-        try {
-            List<BlogData> blogs = blogRepo.findAllByCategory(category);
-            if (blogs.isEmpty()) throw new IllegalArgumentException("Not found");
-            return blogs.stream().map(blogData -> {
-                Optional<User> userOptional = userRepo.findById(blogData.getUserId());
-                if (userOptional.isPresent()) {
-                    User user = userOptional.get();
-                    return new GetAllBlog(blogData.getId(), user.getUsername(), user.getPhoto(), blogData);
-                } else return new GetAllBlog(null, null, null, blogData);
-            }).collect(Collectors.toList());
-
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public List<GetAllBlog> getAllBlogsWithUserInfo() {
-        List<User> users = userRepo.findAll();
-        return users.stream().flatMap(user ->
-                blogRepo.findAllById(user.getBlogId()).stream().map(blog ->
-                        new GetAllBlog(user.getId(), user.getName(), user.getPhoto(), blog)
-                )).toList();
-    }
+    PageResponse<BlogDataDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder) throws BlogNotFoundException;
 
 }

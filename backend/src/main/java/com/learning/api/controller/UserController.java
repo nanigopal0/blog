@@ -1,9 +1,9 @@
 package com.learning.api.controller;
 
+import com.learning.api.dto.UserDTO;
 import com.learning.api.entity.User;
 import com.learning.api.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -14,26 +14,22 @@ import java.util.Optional;
 
 
 @RestController
-@RequestMapping("/register")
-
-public class RegisterController {
-
+@RequestMapping("/user")
+@Slf4j
+public class UserController {
 
     private final UserService userService;
 
-    Logger logger = LoggerFactory.getLogger(RegisterController.class);
-
-    public RegisterController(UserService userService) {
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @GetMapping("get")
-    public ResponseEntity<User> getUserByEmail() {
+    public ResponseEntity<UserDTO> getUserByEmail() {
         try {
-            User user = userService.findUserByEmail();
-            return ResponseEntity.of(Optional.of(user));
+            return ResponseEntity.of(Optional.of(userService.findUserByEmail()));
         } catch (Exception e) {
-            logger.error("getUserByEmail: User not found! ${}", e.getMessage());
+            log.error("getUserByEmail: User not found! ${}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -44,7 +40,7 @@ public class RegisterController {
             List<User> users = userService.findAllUser();
             return ResponseEntity.of(Optional.of(users));
         } catch (Exception e) {
-            logger.error("getAllUser: Users not found! ${}", e.getMessage());
+            log.error("getAllUser: Users not found! ${}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
@@ -55,7 +51,7 @@ public class RegisterController {
             User updateUser = userService.updateUser(entity);
             return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(updateUser);
         } catch (Exception e) {
-            logger.error("updateUser: Failed to update user! ${}", e.getMessage());
+            log.error("updateUser: Failed to update user! ${}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -63,13 +59,10 @@ public class RegisterController {
     @DeleteMapping("delete")
     public ResponseEntity<Void> deleteUser() {
         try {
-            boolean isDeleted = userService.deleteUserById();
-            if (isDeleted) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-            } else
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            userService.deleteUserById();
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } catch (Exception e) {
-            logger.error("deleteUser: Failed to delete user! ${}", e.getMessage());
+            log.error("deleteUser: Failed to delete user! ${}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -80,10 +73,25 @@ public class RegisterController {
             List<User> users = userService.searchUsers(search);
             return ResponseEntity.ok(users);
         } catch (Exception e) {
-            logger.error("searchUser: User not found! ${}", e.getMessage());
+            log.error("searchUser: User not found! ${}", e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }
 
+    @GetMapping("logout")
+    public ResponseEntity<String> logout() {
+        userService.logout();
+        return ResponseEntity.ok("Logout successful!");
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body("Ping successful!");
+        } catch (Exception e) {
+            log.error("ping: User not found! {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 
 }

@@ -1,33 +1,23 @@
 package com.learning.api.entity;
 
-import com.mongodb.lang.NonNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
+import lombok.*;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Document
+@Document(collection = "users")
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
-    @Id
-    private String id;
-    private String name;
-    private String photo;
-    @NonNull
-    @Indexed(unique = true)
-    private String username;
-    @NonNull
-    @Indexed(unique = true)
-    private String email;
-    private String password;
-    private String roles;   //Role of the user like USER, ADMIN
-    //    @DocumentReference(collection = "blogData")
-    private List<String> blogId;
+@Builder
+public class User extends BaseUser {
+    //    @DocumentReference(collection = "blogs",lazy = true)
+//    @JsonManagedReference
+//    @ToString.Exclude
+//    private List<BlogData> blogs;
+//    private List<ObjectId> blogIds;//
+//    private List<ObjectId> commentIds;//
+    private List<Interest> interests;
+    private List<Follower> followers;
 }

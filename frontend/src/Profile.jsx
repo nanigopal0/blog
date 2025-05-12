@@ -17,7 +17,7 @@ import { AuthContext } from "./contexts/AuthContext";
 function Profile() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { authToken, logout } = useContext(AuthContext);
+  const {  logout } = useContext(AuthContext);
   const userInfo = JSON.parse(Cookies.get("user"));
 
   useEffect(() => {
@@ -25,9 +25,9 @@ function Profile() {
       try {
         const userResult = await fetch(`${API_BASE_URL}/user/get`, {
           method: "GET",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: authToken,
           },
         });
         if (userResult.status === 401) {
@@ -39,6 +39,7 @@ function Profile() {
           throw new Error("Network response was not ok");
         }
         const resultData = await userResult.json();
+        console.log(resultData)
         setLoading(false);
       } catch (error) {
         console.error("There has been a problem with fetch operation:", error);
@@ -46,7 +47,7 @@ function Profile() {
     };
 
     fetchUser();
-  }, [authToken, navigate, logout]);
+  }, [ navigate, logout]);
 
   return (
     <Box
@@ -56,7 +57,7 @@ function Profile() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background",
       }}
     >
       {loading && <LoadingIndicator />}
@@ -68,7 +69,7 @@ function Profile() {
             p: 3,
             boxShadow: 4,
             borderRadius: 2,
-            backgroundColor: "white",
+            backgroundColor: "background.paper",
           }}
         >
           <CardContent>
@@ -97,13 +98,13 @@ function Profile() {
                 {userInfo.name}
               </Typography>
               <Typography variant="body1" sx={{ mb: 1 }}>
-                {userInfo.email}
+                Email: {userInfo.email}
               </Typography>
-              <Typography variant="body2" sx={{ color: "gray", mb: 2 }}>
-                @{userInfo.username}
+              <Typography variant="body2" sx={{ color: "text.primary", mb: 2 }}>
+                username: @{userInfo.username}
               </Typography>
               <Divider sx={{ width: "100%", mb: 2 }} />
-              <Typography variant="body2" sx={{ color: "gray" }}>
+              <Typography variant="body2" >
                 Role: {userInfo.role}
               </Typography>
             </Box>

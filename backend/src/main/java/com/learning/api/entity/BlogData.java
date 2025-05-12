@@ -1,31 +1,42 @@
 package com.learning.api.entity;
 
 
-import com.mongodb.lang.NonNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.IndexDirection;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document
+@Document(collection = "blogs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class BlogData {
     @Id
-    private String id;
+    private ObjectId id;
+    @Indexed
     private String title;
     private String coverImage;
     private String content;
     @NonNull
-    private String category;
+    @Indexed(direction = IndexDirection.ASCENDING)
+    private ObjectId categoryId;
+    @Indexed(direction = IndexDirection.DESCENDING)
     private LocalDateTime time;
-    private String userId;
+
+    //    @DocumentReference(collection = "users")
+//    @JsonBackReference
+//    @ToString.Exclude
 //    private User user;
-    private int like;
-    private List<String> comment;
+    @Indexed(direction = IndexDirection.ASCENDING)
+    private ObjectId userId;
+//    private int likes;
+//    private List<ObjectId> commentIds;//
 }

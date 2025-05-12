@@ -27,9 +27,13 @@ function Home() {
   const [totalElements, setTotalElements] = useState(0);
   const [isLastPage, setIsLastPage] = useState(false);
   const { authToken, logout } = useContext(AuthContext);
+  const scrollContainerRef = useRef(null);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchBlog(pageNumber - 1, pageSize);
+    getAllCategories();
+
   }, []);
 
   const getAllBlogs = async (pageNumber, pageSize) => {
@@ -39,19 +43,41 @@ function Home() {
         {
           method: "GET",
           credentials: "include",
-          // headers: {
-          //   "Content-Type": "application/json",
-          //   Authorization: authToken,
-          // },
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
-
+      if(result.status == 404)
+      {
+        console.log("No blogs found");
+        return null;
+      }
       return await handleResponseFromFetchBlog(result, logout);
     } catch (error) {
       console.error("There has been a problem with fetch operation:", error);
       return null;
     }
   };
+
+  const getAllCategories = async () => {
+        try {
+      const response = await fetch(`${API_BASE_URL}/category/all`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        logout();
+      }
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  }
 
   const fetchBlog = async (pageNumber, pageSize) => {
     setLoading(true);
@@ -67,7 +93,6 @@ function Home() {
     }
     setLoading(false);
   };
-  const scrollContainerRef = useRef(null);
 
   const handleMouseDown = (e) => {
     const container = scrollContainerRef.current;
@@ -92,27 +117,11 @@ function Home() {
   const handleOnHeaderClick = () => {
     console.log("Header clicked");
   };
-
-  const headerConstant = [
-    "Trending",
-    "Popular",
-    "Recommended",
-    "Recently Added",
-    "Filter",
-    "CyberSecurity",
-    "Web 3",
-    "Cloud Computing",
-    "Data Science",
-    "Artificial Intelligence",
-    "Blockchain",
-    "SEO",
-  ];
-
   return (
     <Box
       sx={{
         p: { xs: 2, sm: 3, md: 5 },
-        backgroundColor: "#f9f9f9",
+        backgroundColor: "background.default",
         minHeight: "100vh",
       }}
     >
@@ -125,7 +134,7 @@ function Home() {
           overflowX: "auto",
           py: 2,
           px: 3,
-          backgroundColor: "#ffffff",
+          backgroundColor: "background.paper",
           borderRadius: 2,
           boxShadow: 2,
           whiteSpace: "nowrap",
@@ -141,8 +150,8 @@ function Home() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp} // Stop dragging if the mouse leaves the container
       >
-        {headerConstant.map((value, idx) => (
-          <HeaderHomePage key={idx} name={value} onClick={handleOnHeaderClick} />
+        {categories.map((category) => (
+          <HeaderHomePage key={category.id} name={category.category} onClick={handleOnHeaderClick} />
         ))}
       </Box>
 
@@ -167,7 +176,7 @@ function Home() {
         ) : (
           blogs.map((blog) => (
 
-              <MediaCard blog={blog} />
+              <MediaCard key={blog.id} blog={blog} />
           ))
         )}
       </Grid>

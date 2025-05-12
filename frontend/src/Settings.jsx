@@ -120,7 +120,7 @@ function Settings() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background.default",
       }}
     >
       {loading && <LoadingIndicator />}
@@ -131,7 +131,7 @@ function Settings() {
           p: 3,
           boxShadow: 4,
           borderRadius: 2,
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
         }}
       >
         <CardContent>

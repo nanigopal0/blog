@@ -7,11 +7,13 @@ import { API_BASE_URL } from "./util/BaseUrl";
 import { AuthContext } from "./contexts/AuthContext";
 import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
 import PaginationRounded from "./components/PaginationRounded";
+import MediaCard from "./components/MediaCard";
+import { Box, CircularProgress, Grid, Typography } from "@mui/material";
 
 function Search() {
   const [searchedBlogs, setSearchedBlogs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { authToken, logout } = useContext(AuthContext);
+  const { logout } = useContext(AuthContext);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(ConstBlogPageSize[0]);
   const [totalPages, setTotalPages] = useState(1);
@@ -45,9 +47,9 @@ function Search() {
       `${API_BASE_URL}/blog/search?keyword=${searchKey}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
       {
         method: "GET",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: authToken,
         },
       }
     )
@@ -63,28 +65,67 @@ function Search() {
   };
 
   return (
-    <div className="m-4">
-      <p className="text-2xl font-bold my-3">Searched blogs</p>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+    <Box
+      sx={{
+        padding: 4,
+      }}
+    >
+     
+        {/* Header Section */}
+        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 3 }}>
+          Searched Blogs
+        </Typography>
+
+        {/* Blogs Section */}
         {loading ? (
-          <LoadingIndicator />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "200px",
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : searchedBlogs.length === 0 ? (
+          <Typography
+            variant="body1"
+            color="textSecondary"
+            sx={{ textAlign: "center" }}
+          >
+            No results found
+          </Typography>
         ) : (
-          <>{searchedBlogs.length == 0 ? "No result found" : ""}</>
+          <Grid container spacing={3}>
+            {searchedBlogs.map((element) => (
+              <Grid item xs={12} sm={6} md={4} key={element.id}>
+                <MediaCard blog={element} />
+              </Grid>
+            ))}
+          </Grid>
         )}
-        {searchedBlogs &&
-          searchedBlogs.map((element) => {
-            return <HomeBlogCard key={element.id} blog={element} />;
-          })}
-      </div>
-      <PaginationRounded
-        pageNumber={pageNumber}
-        pageSize={pageSize}
-        onChangePage={fetchSearchedBlogs}
-        isLastPage={isLastPage}
-        totalElements={totalElements}
-        totalPages={totalPages}
-      />
-    </div>
+ 
+      {searchedBlogs.length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 4,
+          }}
+        >
+          <PaginationRounded
+            pageNumber={pageNumber}
+            pageSize={pageSize}
+            onChangePage={fetchSearchedBlogs}
+            isLastPage={isLastPage}
+            totalElements={totalElements}
+            totalPages={totalPages}
+          />
+        </Box>
+      )}
+    </Box>
   );
 }
 

@@ -12,6 +12,8 @@ import AccountCircle from "@mui/icons-material/AccountCircle";
 import Settings from "@mui/icons-material/Settings";
 import Logout from "@mui/icons-material/Logout";
 import { AuthContext } from "../contexts/AuthContext";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 import {
   alpha,
   Button,
@@ -19,20 +21,25 @@ import {
   InputAdornment,
   ListItemIcon,
   TextField,
+  useTheme,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SearchDialog from "./SearchDialog";
+import { ThemeContext } from "../contexts/ThemeContext";
 
 export default function NavBar({ openLoginDialog }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
-  const { authToken, isAuthenticated, logout } = React.useContext(AuthContext);
+  const { isAuthenticated, logout } = React.useContext(AuthContext);
   const [searchKeyword, setSearchKeyword] = React.useState("");
+  const { darkMode, toggleTheme } = React.useContext(ThemeContext);
+  const theme = useTheme();
 
-  // const handleSearchBlur = () => setSearchExpanded(false); // Collapse the search bar when it loses focus
+  const isActive = (path) => location.pathname === path; // Check if the tab is active
 
   const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
 
@@ -57,9 +64,6 @@ export default function NavBar({ openLoginDialog }) {
     logout();
     handleMenuClose();
   };
-
-  // const handleMobileMenuOpen = (event) =>
-  //   setMobileMoreAnchorEl(event.currentTarget);
 
   const menuId = "primary-search-account-menu";
   const renderMenu = (
@@ -90,7 +94,7 @@ export default function NavBar({ openLoginDialog }) {
               right: 14,
               width: 10,
               height: 10,
-              bgcolor: "background.paper",
+         
               transform: "translateY(-50%) rotate(45deg)",
               zIndex: 0,
             },
@@ -153,7 +157,7 @@ export default function NavBar({ openLoginDialog }) {
           aria-label="account of current user"
           aria-controls="primary-search-account-menu"
           aria-haspopup="true"
-          color="inherit"
+          // color="inherit"
         >
           <AccountCircle />
         </IconButton>
@@ -173,7 +177,7 @@ export default function NavBar({ openLoginDialog }) {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1}} >
       <AppBar position="static" color="primary">
         <SearchDialog
           open={open}
@@ -185,7 +189,7 @@ export default function NavBar({ openLoginDialog }) {
           <IconButton
             size="large"
             edge="start"
-            color="inherit"
+            // color="inherit"
             aria-label="open drawer"
             sx={{ mr: 2, display: { xs: "block", sm: "none", md: "none" } }}
           >
@@ -206,10 +210,11 @@ export default function NavBar({ openLoginDialog }) {
             size="small"
             placeholder="Search..." // Show placeholder only when expanded
             value={searchKeyword}
+            hidden={!isAuthenticated} // Disable when not authenticated
             onClick={openSearch}
             sx={{
               transition: "width 0.3s ease, background-color 0.3s ease",
-              backgroundColor: alpha("#ffffff", 0.15), // Contrasting background
+              backgroundColor: alpha("#ffffff", 0.4), // Contrasting background
 
               marginLeft: 2, // Add margin for spacing
               "&:hover": {
@@ -242,15 +247,24 @@ export default function NavBar({ openLoginDialog }) {
 
           <ButtonBase
             hidden={!isAuthenticated}
-            sx={{ display: { xs: "none", sm: "block" }, marginRight: 3 }}
+            sx={{
+              display: { xs: "none", sm: "block" },
+              marginRight: 4,
+              backgroundColor: isActive("/dashboard")
+                ? "rgba(255, 255, 255, 0.2)"
+                : "transparent",
+              borderRadius: 2,
+              padding: "6px 12px",
+            }}
             onClick={() => navigate("/dashboard")}
           >
             <Typography
               variant="h6"
-              fontSize={18}
+              fontSize={20}
               noWrap
               component="div"
-              fontWeight={400}
+        
+              fontWeight={500}
             >
               Dashboard
             </Typography>
@@ -258,36 +272,54 @@ export default function NavBar({ openLoginDialog }) {
 
           <ButtonBase
             hidden={!isAuthenticated}
-            sx={{ display: { xs: "none", sm: "block" }, marginRight: 3 }}
+            sx={{
+              display: { xs: "none", sm: "block" },
+              marginRight: 4,
+              backgroundColor: isActive("/create-blog")
+                ? "rgba(255, 255, 255, 0.2)"
+                : "transparent",
+              borderRadius: 2,
+              padding: "6px 12px",
+            }}
             onClick={() => navigate("/create-blog")}
           >
             <Typography
               variant="h6"
-              fontSize={18}
+              fontSize={20}
               noWrap
+             
               component="div"
-              fontWeight={400}
+              fontWeight={500}
             >
               Post
             </Typography>
           </ButtonBase>
 
           <ButtonBase
-            sx={{ display: { xs: "none", sm: "block" }, marginRight: 3 }}
+            sx={{
+              display: { xs: "none", sm: "block" },
+              marginRight: 3,
+              backgroundColor: isActive("/about")
+                ? "rgba(255, 255, 255, 0.2)"
+                : "transparent",
+              borderRadius: 2,
+              padding: "6px 12px",
+            }}
             onClick={() => navigate("/about")}
           >
             <Typography
               variant="h6"
-              fontSize={18}
+              fontSize={20}
               noWrap
+   
               component="div"
-              fontWeight={400}
+              fontWeight={500}
             >
               About
             </Typography>
           </ButtonBase>
 
-          <Box>
+          <Box marginRight={3}>
             <IconButton
               hidden={!isAuthenticated}
               size="large"
@@ -310,11 +342,20 @@ export default function NavBar({ openLoginDialog }) {
                 marginRight: 3,
                 fontSize: 18,
                 borderRadius: 2,
+                backgroundColor: "#7f03fc",
+                ":hover": {
+                  backgroundColor: "#8013bf",
+                },
               }}
               onClick={openLoginDialog}
             >
               Login
             </Button>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton color="#ffffff" onClick={toggleTheme}>
+              {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>

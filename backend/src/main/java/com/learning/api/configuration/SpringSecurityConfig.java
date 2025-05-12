@@ -2,7 +2,7 @@ package com.learning.api.configuration;
 
 import com.learning.api.jwt.JwtAuthEntryPoint;
 import com.learning.api.jwt.JwtAuthFilter;
-import com.learning.api.service.CustomUserDetailService;
+import com.learning.api.service.implement.CustomUserDetailService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,10 +49,10 @@ public class SpringSecurityConfig {
                 cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(registry -> {
-                    registry.requestMatchers("/public/**").permitAll()
-                            .requestMatchers("/admin/**").hasRole("ADMIN")
-                            .requestMatchers("/register/**", "/blog/**").hasRole("USER")
-                            .anyRequest().permitAll();
+                    registry.requestMatchers("/public/**","/admin/login").permitAll()
+                            .requestMatchers("/user/**", "/blog/**","/category/all","/blog/reaction/").hasAnyRole("ADMIN","USER")
+                            .requestMatchers("/admin/**","/category/**").hasRole("ADMIN")
+                            .anyRequest().authenticated();
                 })
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
@@ -64,7 +64,7 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://blog-gama.vercel.app", "https://blog-abcs-projects-883dea03.vercel.app/", "https://blog-git-master-abcs-projects-883dea03.vercel.app/", "http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("https://blogs-gama.vercel.app", "http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

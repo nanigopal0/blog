@@ -1,15 +1,16 @@
-import { Box, Typography, ButtonBase } from "@mui/material";
+import { Box, Typography, ButtonBase, useTheme } from "@mui/material";
 
 export default function HeaderHomePage({ name, onClick }) {
+  const theme = useTheme();
   return (
     <ButtonBase
-      onClick={onClick}
+      onClick={onClick} 
       sx={{
         display: "inline-block",
-        background: "linear-gradient(135deg, #1976d2, #42a5f5)", // Gradient background
-        color: "white",
-        borderRadius: "25px", // Fully rounded pill shape
-        padding: "10px 20px", // Padding for better spacing
+        background: theme.palette.secondary.main, // Gradient background
+        color: theme.palette.text.primary, // Text color
+        borderRadius: "18px", // Fully rounded pill shape
+        padding: "8px 10px", // Padding for better spacing
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)", // Subtle shadow
         transition: "transform 0.3s, box-shadow 0.3s", // Smooth hover effect
         "&:hover": {
@@ -19,9 +20,9 @@ export default function HeaderHomePage({ name, onClick }) {
       }}
     >
       <Typography
-        variant="body1"
+        // variant="body1"
         sx={{
-          fontWeight: "bold",
+          fontWeight: "medium",
           textTransform: "capitalize", // Capitalize the header name
           textAlign: "center",
         }}

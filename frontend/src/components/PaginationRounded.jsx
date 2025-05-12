@@ -22,7 +22,8 @@ export default function PaginationRounded({
         mb: 4,
         px: 2,
         py: 2,
-        backgroundColor: "#ffffff",
+        backgroundColor: "background.paper",
+        
         borderRadius: 2,
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
@@ -61,7 +62,7 @@ export default function PaginationRounded({
       />
 
       {/* Total Elements */}
-      <Typography variant="body2" sx={{ fontWeight: "bold", color: "#555" }}>
+      <Typography variant="body2" sx={{  color: "text.primary" }}>
         Total Blogs: {totalElements}
       </Typography>
     </Box>

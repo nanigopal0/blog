@@ -38,7 +38,7 @@ function CreateBlog() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [categories, setCategories] = useState([]);
-  const { authToken, isAuthenticated, logout } = useContext(AuthContext);
+  const { isAuthenticated, logout } = useContext(AuthContext);
   const user = JSON.parse(Cookies.get("user"));
 
   // Ensure the Quill editor has the desired minimum height and allows dynamic resizing.
@@ -56,8 +56,9 @@ function CreateBlog() {
     try {
       const response = await fetch(`${API_BASE_URL}/category/all`, {
         method: "GET",
+        credentials: "include",
         headers: {
-          Authorization: authToken,
+          "Content-Type": "application/json",
         },
       });
       if (!response.ok) {
@@ -153,9 +154,9 @@ function CreateBlog() {
       const response = await fetch(`${API_BASE_URL}/blog/add`, {
         method: "POST",
         body: JSON.stringify(data),
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: authToken,
         },
       });
 
@@ -191,8 +192,9 @@ function CreateBlog() {
       {/* Cover Image Input */}
       <Box
         onClick={handleCoverImageClick}
+       
         sx={{
-          height: "12rem",
+          height: "18rem",
           width: "80%",
           // Using same width as your current code (w-4/5 md:w-1/2).
           maxWidth: { xs: "80%", md: "50%" },
@@ -211,7 +213,7 @@ function CreateBlog() {
             component="img"
             src={previewImage}
             alt="Cover"
-            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+            sx={{ width: "100%", height: "100%", objectFit: "contain" }}
           />
         ) : (
           <Typography variant="body1" sx={{ fontWeight: 500 }}>

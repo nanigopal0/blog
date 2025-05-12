@@ -29,7 +29,7 @@ function BlogReader() {
   const data = location.state;
   const [blog, setBlog] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { userInfo, authToken, logout } = useContext(AuthContext);
+  const { userInfo, logout } = useContext(AuthContext);
   const [isBlogOfCurrentUser, setIsBlogOfCurrentUser] = useState(false);
   const [totalLikes,setTotalLikes] = useState(0);
   // State for Heart and Comment icons
@@ -51,9 +51,9 @@ function BlogReader() {
         `${API_BASE_URL}/blog/get-blog/${param.id}`,
         {
           method: "GET",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: authToken,
           },
         }
       );
@@ -68,7 +68,6 @@ function BlogReader() {
           response.statusText
         );
       const resultData = await response.json();
-      console.log(resultData);
       setVariables(resultData);
     } catch (error) {
       console.error(error.message || "Error fetching blog data");
@@ -125,9 +124,9 @@ function BlogReader() {
     return await fetch(`${API_BASE_URL}/blog/reaction/like`, {
       method: "POST",
       body: JSON.stringify(data),
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        Authorization: authToken,
       },
     });
   };
@@ -137,9 +136,9 @@ function BlogReader() {
     return await fetch(`${API_BASE_URL}/blog/reaction/dislike`, {
       method: "POST",
       body: JSON.stringify(reactionId),
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        Authorization: authToken,
       },
     });
   };
@@ -158,9 +157,9 @@ function BlogReader() {
       const response = await fetch(`${API_BASE_URL}/comment`, {
         method: "POST",
         body: JSON.stringify(newCommentData),
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: authToken,
         },
       });
       if (response.status == 401) {
@@ -184,18 +183,18 @@ function BlogReader() {
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background.default",
       }}
     >
       {loading && <LoadingIndicator />}
       {blog && (
         <Card
           sx={{
-            width: { xs: "100%", sm: "90%", md: "75%" }, // Full width for small screens
+            width: { xs: "100%", sm: "90%", md: "85%", lg: "75%"}, // Full width for small screens
             p: { xs: 2, sm: 3, md: 4 }, // Adjust padding for different screen sizes
             boxShadow: 4,
             borderRadius: 2,
-            backgroundColor: "white",
+            backgroundColor: "background.paper",
           }}
         >
           {/* Blog Cover Image */}
@@ -214,7 +213,7 @@ function BlogReader() {
               style={{
                 width: "100%",
                 maxHeight: "400px",
-                objectFit: "cover",
+                objectFit: "contain",
                 borderRadius: "8px",
               }}
             />

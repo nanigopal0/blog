@@ -17,7 +17,7 @@ function About() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "background.default",
       }}
     >
       {/* About Section */}
@@ -28,7 +28,7 @@ function About() {
           p: 3,
           boxShadow: 4,
           borderRadius: 2,
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
         }}
       >
         <CardContent>
@@ -75,7 +75,7 @@ function About() {
         }}
       >
         <Divider sx={{ mb: 2 }} />
-        <Typography variant="body2">
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
           © {new Date().getFullYear()} Blog Platform. All rights reserved.
         </Typography>
       </Box>

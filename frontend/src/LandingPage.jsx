@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import LoginDialog from "./components/LoginDialog";
 import RegisterDialog from "./components/RegisterDialog";
+import { AuthContext } from "./contexts/AuthContext";
 
 const featureCards = [
   {
@@ -30,6 +31,7 @@ const featureCards = [
 
 export default function LandingPage({ openRegisterDialog }) {
   const navigate = useNavigate();
+  const { isAuthenticated } =useContext(AuthContext);
   const theme = useTheme();
   // const [loginOpen, setLoginOpen] = useState(false);
   // const [registerOpen, setRegisterOpen] = useState(false);
@@ -72,10 +74,10 @@ export default function LandingPage({ openRegisterDialog }) {
   // };
 
   return (
-    <Box
-      sx={{
-        background: `linear-gradient(${theme.palette.primary.main}, ${theme.palette.secondary.dark})`,
-      }}
+    <Box sx={{backgroundColor: "background.default"}}
+      // sx={{
+      //   background: `linear-gradient(${theme.palette.primary.main}, ${theme.palette.secondary.dark})`,
+      // }}
     >
       {/* Hero Section */}
       {/* <RegisterDialog
@@ -85,7 +87,7 @@ export default function LandingPage({ openRegisterDialog }) {
       />
       <LoginDialog open={loginOpen} onClose={handleLoginClose} onChangeRegister={handleChangeFromLoginToRegister}/> */}
 
-      <Box sx={{ color: "white", py: 12, textAlign: "center" }}>
+      <Box sx={{  py: 12, textAlign: "center" }}>
         <Container maxWidth="md">
           <Typography
             variant="h2"
@@ -100,7 +102,7 @@ export default function LandingPage({ openRegisterDialog }) {
             sx={{
               mb: 4,
               fontSize: { xs: "1rem", md: "1.25rem" },
-              color: "rgba(255, 255, 255, 0.9)",
+              color: "text.primary",
             }}
           >
             Share your thoughts, connect with others, and explore amazing blogs
@@ -117,7 +119,7 @@ export default function LandingPage({ openRegisterDialog }) {
                 background: `linear-gradient(135deg, #8b0422, #590678)`,
               },
             }}
-            onClick={() => navigate("/home")}
+            onClick={() => isAuthenticated ? navigate("/home") : openRegisterDialog()}
           >
             Get Started
           </Button>
@@ -132,7 +134,7 @@ export default function LandingPage({ openRegisterDialog }) {
             fontWeight="bold"
             align="center"
             gutterBottom
-            color="cyan"
+            color="secondary"
             sx={{ fontSize: { xs: "2rem", md: "2.5rem" } }}
           >
             Why Choose Blogify?
@@ -142,7 +144,7 @@ export default function LandingPage({ openRegisterDialog }) {
             align="center"
             sx={{
               mb: 6,
-              color: "moccasin",
+              color: "secondary",
               fontSize: { xs: "0.9rem", md: "1.1rem" },
             }}
           >
@@ -181,7 +183,7 @@ export default function LandingPage({ openRegisterDialog }) {
       </Box>
 
       {/* Call-to-Action Section */}
-      <Box sx={{ color: "white", py: 8, textAlign: "center" }}>
+      <Box sx={{  py: 8, textAlign: "center" }}>
         <Container>
           <Typography
             variant="h4"
@@ -196,7 +198,7 @@ export default function LandingPage({ openRegisterDialog }) {
             sx={{
               mb: 4,
               fontSize: { xs: "0.9rem", md: "1.1rem" },
-              color: "rgba(255, 255, 255, 0.9)",
+              color: "text.primary",
             }}
           >
             Join Blogify today and share your voice with the world.
