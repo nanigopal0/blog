@@ -64,7 +64,7 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://blogs-gama.vercel.app", "https://blog-abcs-projects-883dea03.vercel.app/","https://blog-git-master-abcs-projects-883dea03.vercel.app/","http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("https://blog-gama.vercel.app", "https://blog-abcs-projects-883dea03.vercel.app/","https://blog-git-master-abcs-projects-883dea03.vercel.app/","http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
