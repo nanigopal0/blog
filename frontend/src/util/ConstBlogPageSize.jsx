@@ -1,0 +1,1 @@
+export const ConstBlogPageSize = [10,20,30]
