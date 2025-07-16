@@ -5,8 +5,8 @@
       "destination": "/"
     },
      {
-      "source": "/api/:path*",
-      "destination": "/api/proxy"
+      "source": "/api/(.*)",
+      "destination": "https://blogify-f6adbbhwb3c6atc9.eastasia-01.azurewebsites.net/$1"
     }
   ]
 }
