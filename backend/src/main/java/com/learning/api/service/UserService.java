@@ -24,7 +24,7 @@ public interface UserService {
 
     UserDTO findUserByEmail();
 
-    User updateUser(User user);
+    User updateUser(BaseUserDTO user);
 
     void deleteUserById();
 

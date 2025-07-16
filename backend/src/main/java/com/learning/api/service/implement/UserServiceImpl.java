@@ -151,7 +151,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(User updateUser) {
+    public User updateUser(BaseUserDTO updateUser) {
         if (!isUserAuthenticated())
             return null;
         else {
@@ -170,8 +170,6 @@ public class UserServiceImpl implements UserService {
                 dbUser.setEmail(updateUser.getEmail());
                 if (updateUser.getPassword() != null)
                     dbUser.setPassword(passwordEncoder.encode(updateUser.getPassword()));
-                if (updateUser.getRole() != null)
-                    dbUser.setRole(updateUser.getRole());
                 return userRepo.save(dbUser);
             } else
                 return null;
@@ -189,7 +187,7 @@ public class UserServiceImpl implements UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         User dbUser = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-        deleteUserById(dbUser.getId());
+        this.deleteUserById(dbUser.getId());
     }
 
     @Transactional
