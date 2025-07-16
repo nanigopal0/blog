@@ -5,8 +5,8 @@
       "destination": "/"
     },
      {
-      "source": "/api/:match*",
-      "destination": "/api/proxy.js"
+      "source": "/api/:path*",
+      "destination": "/api/proxy"
     }
   ]
 }
