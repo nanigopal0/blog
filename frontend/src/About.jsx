@@ -17,9 +17,12 @@ function About() {
           boxShadow: 4,
           borderRadius: 2,
           backgroundColor: "background.body",
+          
         }}
+        className="h-screen flex justify-center items-center"
+       
       >
-        <CardContent>
+        <CardContent className="w-full lg:w-2/4 md:w-3/4 ">
           <Box
             sx={{
               display: "flex",
@@ -27,6 +30,7 @@ function About() {
               alignItems: "center",
               textAlign: "center",
             }}
+            
           >
             <Typography variant="h4" sx={{ fontWeight: "bold", mb: 2 }}>
               About us
