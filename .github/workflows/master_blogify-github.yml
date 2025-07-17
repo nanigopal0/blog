@@ -25,13 +25,30 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn -B package --file backend/pom.xml
+        env:
+          SPRING_DATA_MONGODB_URI: ${{secrets.MONGODB_URL}}
+          SPRING_DATA_MONGODB_DATABASE: ${{secrets.MONGODB_NAME}}
+          GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
+          GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          path: '${{ github.workspace }}/backend/target/*.jar'
+
+      - name: Build and Push Docker image
+        uses: mr-smithers-excellent/docker-build-push@v6
+        with:
+          image: ${{secrets.DOCKERHUB_IMAGE_NAME}}
+          dockerfile: 'backend/Dockerfile'
+          directory: backend
+          tags: ${{ github.sha }}
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
 
   deploy:
     runs-on: ubuntu-latest
