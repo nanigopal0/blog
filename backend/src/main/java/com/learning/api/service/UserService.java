@@ -1,5 +1,6 @@
 package com.learning.api.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.learning.api.dto.BaseUserDTO;
 import com.learning.api.dto.SignInRequestDTO;
 import com.learning.api.dto.UserDTO;
@@ -35,4 +36,6 @@ public interface UserService {
     List<User> searchUsers(String name) throws Exception;
 
     void logout();
+
+    BaseUserDTO generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException;
 }

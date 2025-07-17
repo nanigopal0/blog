@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -29,7 +29,7 @@ const featureCards = [
 
 export default function LandingPage({ openRegisterDialog }) {
   const navigate = useNavigate();
-  const { isAuthenticated } =useContext(AuthContext);
+  const { isAuthenticated, updateUserInfo } = useContext(AuthContext);
   const theme = useTheme();
   // const [loginOpen, setLoginOpen] = useState(false);
   // const [registerOpen, setRegisterOpen] = useState(false);
@@ -48,6 +48,41 @@ export default function LandingPage({ openRegisterDialog }) {
     "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
     transition: "transform 0.3s ease-in-out",
     borderRadius: 2,
+  };
+
+  useEffect(() => {
+    const token = extractOAuth2TokenFromUrl();
+    if (token) {
+      getUserInfo(token);
+    }
+  }, []);
+
+  // Function to extract OAuth2 temporary token from URL
+  const extractOAuth2TokenFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("token");
+  };
+
+  const getUserInfo = async (token) => {
+    try {
+      const response = await fetch(
+        `/api//oauth2-success/jwt-token?token=${token}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        updateUserInfo(data);
+        navigate("/home");
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
   };
 
   // const handleChangeFromRegisterToLogin = () => {
@@ -72,7 +107,8 @@ export default function LandingPage({ openRegisterDialog }) {
   // };
 
   return (
-    <Box sx={{backgroundColor: "background.body"}}
+    <Box
+      sx={{ backgroundColor: "background.body" }}
       // sx={{
       //   background: `linear-gradient(${theme.palette.primary.main}, ${theme.palette.secondary.dark})`,
       // }}
@@ -85,7 +121,7 @@ export default function LandingPage({ openRegisterDialog }) {
       />
       <LoginDialog open={loginOpen} onClose={handleLoginClose} onChangeRegister={handleChangeFromLoginToRegister}/> */}
 
-      <Box sx={{  py: 12, textAlign: "center" }}>
+      <Box sx={{ py: 12, textAlign: "center" }}>
         <Container maxWidth="md">
           <Typography
             variant="h2"
@@ -117,7 +153,9 @@ export default function LandingPage({ openRegisterDialog }) {
                 background: `linear-gradient(135deg, #8b0422, #590678)`,
               },
             }}
-            onClick={() => isAuthenticated ? navigate("/home") : openRegisterDialog()}
+            onClick={() =>
+              isAuthenticated ? navigate("/home") : openRegisterDialog()
+            }
           >
             Get Started
           </Button>
@@ -151,14 +189,16 @@ export default function LandingPage({ openRegisterDialog }) {
           </Typography>
           <Grid container spacing={4} flex={1} justifyContent="center">
             {featureCards.map((card, index) => (
-              <Grid key={index}
-              sx={{
-                gridColumn: {
-                  xs: "span 12", // Full width on small screens
-                  sm: "span 6",  // Half width on medium screens
-                  md: "span 4",  // One-third width on large screens
-                },
-              }}>
+              <Grid
+                key={index}
+                sx={{
+                  gridColumn: {
+                    xs: "span 12", // Full width on small screens
+                    sm: "span 6", // Half width on medium screens
+                    md: "span 4", // One-third width on large screens
+                  },
+                }}
+              >
                 <Card sx={cardStyles}>
                   <CardContent>
                     <Typography
@@ -169,7 +209,7 @@ export default function LandingPage({ openRegisterDialog }) {
                     >
                       {card.title}
                     </Typography>
-                    <Typography variant="body2" color="primary.text" >
+                    <Typography variant="body2" color="primary.text">
                       {card.description}
                     </Typography>
                   </CardContent>
@@ -180,8 +220,7 @@ export default function LandingPage({ openRegisterDialog }) {
         </Container>
       </Box>
 
-    
-      <Box sx={{  py: 8, textAlign: "center" }}>
+      <Box sx={{ py: 8, textAlign: "center" }}>
         <Container>
           <Typography
             variant="h4"

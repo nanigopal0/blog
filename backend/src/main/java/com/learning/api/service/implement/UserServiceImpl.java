@@ -1,13 +1,16 @@
 package com.learning.api.service.implement;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learning.api.configuration.CustomUserDetails;
 import com.learning.api.dto.BaseUserDTO;
 import com.learning.api.dto.Role;
 import com.learning.api.dto.SignInRequestDTO;
 import com.learning.api.dto.UserDTO;
 import com.learning.api.entity.AuthMode;
-import com.learning.api.entity.BaseUser;
 import com.learning.api.entity.User;
+import com.learning.api.exception.AESTokenException;
 import com.learning.api.exception.UserAlreadyExistException;
 import com.learning.api.exception.UserNotFoundException;
 import com.learning.api.jwt.JwtService;
@@ -17,16 +20,13 @@ import com.learning.api.repositories.UserRepo;
 import com.learning.api.service.AdminService;
 import com.learning.api.service.CookieService;
 import com.learning.api.service.UserService;
+import com.learning.api.util.AESUtils;
 import com.learning.api.util.GeneralMethod;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +34,9 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -80,8 +82,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public BaseUserDTO login(SignInRequestDTO signInRequest) {
-        User loadedUser =userRepo.findByEmail(signInRequest.getEmail()).orElseThrow(() -> new UserNotFoundException(signInRequest.getEmail()));
-        if(loadedUser.getAuthMode() == AuthMode.OAUTH2)
+        User loadedUser = userRepo.findByEmail(signInRequest.getEmail()).orElseThrow(() -> new UserNotFoundException(signInRequest.getEmail()));
+        if (loadedUser.getAuthMode() == AuthMode.OAUTH2)
             throw new BadCredentialsException("Different authentication mode.Use OAuth2 provider to login!");
         Authentication authRequest = new UsernamePasswordAuthenticationToken(signInRequest.getEmail(), signInRequest.getPassword());
         Authentication authResponse = authenticationManager.authenticate(authRequest);
@@ -93,7 +95,7 @@ public class UserServiceImpl implements UserService {
 
             cookieService.addTokenToCookie(response, token);
 
-            BaseUserDTO dto= BaseUserDTO.builder()
+            BaseUserDTO dto = BaseUserDTO.builder()
                     .role(Role.valueOf(userDetails.getRole()))
                     .photo(userDetails.getUserPhoto())
                     .id(userDetails.getId().toHexString())
@@ -221,6 +223,31 @@ public class UserServiceImpl implements UserService {
     @Override
     public void logout() {
         cookieService.deleteJWTFromCookie(response);
+    }
+
+    @Override
+    public BaseUserDTO generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException {
+        String decryptedData = null;
+        try {
+            decryptedData = AESUtils.decryptKey(token);
+        } catch (Exception e) {
+            log.error("Error while decrypting token: {}", e.getMessage());
+            throw new AESTokenException("Error while decrypting token: " + e.getMessage());
+        }
+        Map<String, String> data = new ObjectMapper().readValue(decryptedData, new TypeReference<>() {
+        });
+        String email = data.get("email");
+        long issuedAt = Long.parseLong(data.get("issuedAt"));
+        if (System.currentTimeMillis() - issuedAt > 15000) {
+            throw new CredentialsExpiredException("Token expired!");
+        }
+        UserDTO user = findUserByEmail(email);
+        if (user.getEmail().equals(email)) {
+            String jwtToken = jwtService.generateToken(user.getUsername(), user.getName(), user.getId(),
+                    user.getRole().name(), user.getEmail());
+            cookieService.addTokenToCookie(response, jwtToken);
+            return user;
+        } else throw new BadCredentialsException("Email not match!");
     }
 
     private UserDTO convertUserToUserDTO(User user) {

@@ -29,7 +29,7 @@ public class UserController {
     @GetMapping("get")
     public ResponseEntity<UserDTO> getUserByEmail() {
         try {
-            return ResponseEntity.of(Optional.of(userService.findUserByEmail()));
+            return ResponseEntity.ok(userService.findUserByEmail());
         } catch (Exception e) {
             log.error("getUserByEmail: User not found! ${}", e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

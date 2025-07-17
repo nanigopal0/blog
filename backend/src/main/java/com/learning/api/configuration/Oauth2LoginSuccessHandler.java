@@ -4,11 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learning.api.dto.BaseUserDTO;
 import com.learning.api.entity.AuthMode;
 import com.learning.api.exception.UserAlreadyExistException;
-import com.learning.api.jwt.JwtService;
-import com.learning.api.service.CookieService;
 import com.learning.api.service.UserService;
+import com.learning.api.util.AESUtils;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -21,20 +19,18 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
-    private final JwtService jwtService;
-    private final CookieService cookieService;
 
-    public Oauth2LoginSuccessHandler(@Lazy UserService userService, JwtService jwtService, CookieService cookieService) {
+    public Oauth2LoginSuccessHandler(@Lazy UserService userService) {
         this.userService = userService;
-        this.jwtService = jwtService;
-        this.cookieService = cookieService;
+
     }
 
     @Override
@@ -65,15 +61,23 @@ public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             response.sendRedirect(redirectUrl);
         }
 
-
-        BaseUserDTO result = userService.findUserByEmail(email);
-        String token = jwtService.generateToken(result.getUsername(), result.getName(), result.getId(), result.getRole().name(), email);
-        cookieService.addTokenToCookie(response, token);
-        Cookie cookie = new Cookie("user", Base64.getEncoder().encodeToString(new ObjectMapper().writeValueAsString(result).getBytes(StandardCharsets.UTF_8)));
-
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        response.addCookie(cookie);
-        response.sendRedirect("https://blog-gama.vercel.app/home");
+        /**
+         * Generate a temporary token with encoded email id and short duration(15s). This should be immediately
+         * passed in the request body to get a jwt token.
+         **/
+        Map<String, String> data = new HashMap<>();
+        data.put("email", email);
+        data.put("issuedAt", String.valueOf(System.currentTimeMillis()));
+        String token = null;
+        try {
+            token = AESUtils.encryptKey(new ObjectMapper().writeValueAsString(data));
+        } catch (Exception e) {
+            log.error("onAuthenticationSuccess: {}", e.getMessage());
+            response.sendRedirect("https://blog-gama.vercel.app");
+        }
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.sendRedirect("https://blog-gama.vercel.app?token=" + token);
     }
+
+
 }

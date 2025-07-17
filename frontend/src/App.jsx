@@ -1,4 +1,4 @@
-import React, { useContext, Suspense, useState } from "react";
+import React, { useContext, Suspense, useState, useEffect } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthContext } from "./contexts/AuthContext";
 import NavBar from "./components/NavBar";
@@ -20,10 +20,46 @@ const Settings = React.lazy(() => import("./Settings"));
 const About = React.lazy(() => import("./About"));
 
 function App() {
-  const { isAuthenticated } = useContext(AuthContext);
-
+  const { isAuthenticated, updateUserInfo } = useContext(AuthContext);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+ 
+
+  useEffect(() => {
+    const token = extractOAuth2TokenFromUrl();
+    console.log("enter")
+    if (token) {
+      getUserInfo(token);
+    }
+  }, []);
+
+  // Function to extract OAuth2 temporary token from URL
+  const extractOAuth2TokenFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("token");
+  };
+
+  const getUserInfo = async (token) => {
+    try {
+      const response = await fetch(
+        `/api/public/oauth2-success/jwt-token?token=${token}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        updateUserInfo(data);
+        window.location.href = "/home"; // Redirect to home after successful login
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+  };
 
   const handleChangeFromRegisterToLogin = () => {
     setRegisterOpen(false);
@@ -45,10 +81,10 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<LoadingIndicator/>}>
+      <Suspense fallback={<LoadingIndicator />}>
         <NavBar openLoginDialog={handleLoginClickOpen} />
         <Routes>
-          <Route path="/about" element={<About/>} />
+          <Route path="/about" element={<About />} />
           {/* /* Protected Routes */}
           {isAuthenticated ? (
             <>
