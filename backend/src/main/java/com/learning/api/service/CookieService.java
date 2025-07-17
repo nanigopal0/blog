@@ -11,6 +11,7 @@ public class CookieService {
 
     public void deleteJWTFromCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .domain("blog-gama.vercel.app")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -23,6 +24,7 @@ public class CookieService {
 
     public void addTokenToCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
+                .domain("blog-gama.vercel.app")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
