@@ -64,4 +64,9 @@ public class PublicController {
         }
     }
 
+    @GetMapping("say")
+    public ResponseEntity<String> sayHello() {
+        return ResponseEntity.ok("Hi!");
+    }
+
 }

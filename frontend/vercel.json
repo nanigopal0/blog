@@ -1,4 +1,11 @@
 {
+   "redirects": [
+    {
+      "source": "/api/public/login/google",
+      "destination": "https://blogify-f6adbbhwb3c6atc9.eastasia-01.azurewebsites.net/public/login/google",
+      "permanent": false
+    }
+  ],
   "rewrites": [
    
      {
