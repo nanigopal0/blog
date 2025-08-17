@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -124,10 +124,10 @@ function Profile() {
             </Box>
             <Box width={"60%"} gap={2} display={"flex"}>
               <Button variant="text" size="small" onClick={()=>setDisplayFollowers(true)}>
-                Followers {33}
+                Followers 
               </Button>
               <Button variant="text" size="small">
-                Following {5}
+                Following 
               </Button>
             </Box>
           </CardContent>
