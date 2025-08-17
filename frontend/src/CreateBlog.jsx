@@ -9,7 +9,6 @@ import {
 import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { useNavigate } from "react-router-dom";
-import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import { uploadImage } from "./util/UploadImageCloudinary";
 import LoadingIndicator from "./util/LoadingIndicator";
 
@@ -24,7 +23,6 @@ import {
   Typography,
 } from "@mui/material";
 import { AuthContext } from "./contexts/AuthContext";
-import Cookies from "js-cookie";
 
 function CreateBlog() {
   const [image, setImage] = useState(null);
@@ -38,7 +36,7 @@ function CreateBlog() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [categories, setCategories] = useState([]);
-  const {userInfo, isAuthenticated, logout } = useContext(AuthContext);
+  const {userInfo, logout } = useContext(AuthContext);
 
 
   // Ensure the Quill editor has the desired minimum height and allows dynamic resizing.
@@ -138,7 +136,7 @@ function CreateBlog() {
         coverImage: coverImageUrl,
         title: blogTitle,
         content: content,
-        userId: user.id,
+        userId: userInfo.id,
         categoryId: categories[selectedCategory].id,
       };
       if (data.content && data.coverImage && data.title) createBlogInDB(data);

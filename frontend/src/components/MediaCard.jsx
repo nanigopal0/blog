@@ -1,15 +1,12 @@
-import * as React from "react";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
-import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { Avatar, Box, Chip, IconButton } from "@mui/material";
+import { Avatar, Box, Chip } from "@mui/material";
 import { GenerateRandomColor } from "../util/GenerateRandomColor";
 import { useNavigate } from "react-router-dom";
 import htmlTruncate from 'html-truncate';
-import truncate from "html-truncate";
 
 export default function MediaCard({ blog }) {
   const navigate = useNavigate();

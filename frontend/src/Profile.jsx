@@ -13,12 +13,13 @@ import LoadingIndicator from "./util/LoadingIndicator";
 
 import { AuthContext } from "./contexts/AuthContext";
 import { LogOut } from "lucide-react";
+import FollowerListDialog from "./components/FollowerListDialog";
 
 function Profile() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { userInfo, logout } = useContext(AuthContext);
-
+  const [displayFollowers, setDisplayFollowers] = useState(false);
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -79,9 +80,9 @@ function Profile() {
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
                 textAlign: "center",
+                justifyContent: "space-around",
               }}
             >
               <Avatar
@@ -97,19 +98,40 @@ function Profile() {
                   {userInfo.name && userInfo.name.charAt(0).toUpperCase()}
                 </Typography>
               </Avatar>
-              <Typography variant="h5" sx={{ mb: 1, fontWeight: "bold" }}>
-                {userInfo.name}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                Email: {userInfo.email}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "text.primary", mb: 2 }}>
-                username: @{userInfo.username}
-              </Typography>
-              <Divider sx={{ width: "100%", mb: 2 }} />
-              <Typography variant="body2">Role: {userInfo.role}</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  // alignItems: "center",
+                  textAlign: "left",
+                }}
+              >
+                <Typography variant="h4" sx={{ mb: 1, fontWeight: "bold" }}>
+                  {userInfo.name}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Email: {userInfo.email}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "text.primary", mb: 1 }}
+                >
+                  username: @{userInfo.username}
+                </Typography>
+
+                <Typography variant="body2">Role: {userInfo.role}</Typography>
+              </Box>
+            </Box>
+            <Box width={"60%"} gap={2} display={"flex"}>
+              <Button variant="text" size="small" onClick={()=>setDisplayFollowers(true)}>
+                Followers {33}
+              </Button>
+              <Button variant="text" size="small">
+                Following {5}
+              </Button>
             </Box>
           </CardContent>
+          {displayFollowers && <FollowerListDialog onClose={()=>setDisplayFollowers(false)} isOpen={displayFollowers}/>}
           <Divider />
           <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
             <Button

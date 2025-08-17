@@ -11,14 +11,12 @@ import {
   Alert,
   InputAdornment,
   IconButton,
-  Icon,
 } from "@mui/material";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { emailValidate, passwordValidate } from "../util/RegisterInputValidate";
 import {
-  Facebook,
   Google,
   Visibility,
   VisibilityOff,
