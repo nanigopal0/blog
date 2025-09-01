@@ -1,16 +1,20 @@
 package com.learning.api.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
-@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO extends BaseUserDTO {
-    private List<BlogDataDTO> blogs;
+@Builder
+public class UserDTO {
+    private Long id;
+    private String name;
+    private String photo;
+    private String username;
+    private Long totalBlogs = 0L;
+    private Long totalFollowers = 0L;
+    private Long totalFollowings = 0L;
 }

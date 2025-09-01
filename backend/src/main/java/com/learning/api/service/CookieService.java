@@ -5,6 +5,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+
 @Service
 public class CookieService {
 
@@ -26,7 +28,7 @@ public class CookieService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(15 * 60)
+                .maxAge(Duration.ofHours(1).getSeconds())
                 .sameSite("None")
                 .build();
 

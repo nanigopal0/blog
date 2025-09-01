@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class BlogReactionResponseDTO {
-    private String reactionId;
+    // Id of BlogReaction when the Current user likes
+    private Long reactionId;
     private Long totalLikes;
-    private boolean isUserLiked;
 }

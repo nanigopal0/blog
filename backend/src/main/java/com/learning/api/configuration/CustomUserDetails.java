@@ -3,7 +3,6 @@ package com.learning.api.configuration;
 import com.learning.api.entity.BaseUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import org.bson.types.ObjectId;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +16,7 @@ import java.util.List;
 public class CustomUserDetails implements UserDetails {
     private final transient BaseUser user;
 
-    public ObjectId getId() {
+    public Long getId() {
         return user.getId();
     }
 

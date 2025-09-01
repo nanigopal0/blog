@@ -1,15 +1,11 @@
 package com.learning.api.entity;
 
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.IndexDirection;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
@@ -17,20 +13,25 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-@Document(collection = "comments")
+@Entity
+@Table(name = "comments")
 public class Comment {
-    //    @DocumentReference(collection = "users")
-//    private User user;
+
     @Id
-    private ObjectId commentId;
-    @Indexed
-    private ObjectId userId;
-    @Indexed
-    private ObjectId blogId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long commentId;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "blog_id", nullable = false)
+    private BlogData blog;
+
+    @Column(nullable = false)
     private String comment;
-    //    private int likes;
-//    private String userFullName;
-//    private String userPhoto;
-    @Indexed(direction = IndexDirection.DESCENDING)
+
+    @Column(nullable = false)
     private LocalDateTime commentedAt;
 }

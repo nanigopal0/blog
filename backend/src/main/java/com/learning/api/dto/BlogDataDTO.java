@@ -13,12 +13,12 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class BlogDataDTO {
-    private String id;
+    private Long id;
     private String title;
     private String coverImage;
     private String content;
     private CategoryDTO category;
-    private String userId;
+    private Long userId;
     private String userFullName;
     private String userPhoto;
     private String username;

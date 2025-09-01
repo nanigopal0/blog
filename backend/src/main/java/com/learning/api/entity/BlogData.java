@@ -1,42 +1,52 @@
 package com.learning.api.entity;
 
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.IndexDirection;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
-@Document(collection = "blogs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "blogs", indexes =
+@Index(name = "title_idx", columnList = "title")
+)
 public class BlogData {
     @Id
-    private ObjectId id;
-    @Indexed
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private String coverImage;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
-    @NonNull
-    @Indexed(direction = IndexDirection.ASCENDING)
-    private ObjectId categoryId;
-    @Indexed(direction = IndexDirection.DESCENDING)
+
+    @ManyToOne(optional = false)
+    @JoinColumn(nullable = false, name = "category_id")
+    @ToString.Exclude
+    private Category category;
+
+    @Column(nullable = false)
     private LocalDateTime time;
 
-    //    @DocumentReference(collection = "users")
-//    @JsonBackReference
-//    @ToString.Exclude
-//    private User user;
-    @Indexed(direction = IndexDirection.ASCENDING)
-    private ObjectId userId;
-//    private int likes;
-//    private List<ObjectId> commentIds;//
+    @ManyToOne(optional = false)
+    @JoinColumn(nullable = false, name = "user_id")
+    @ToString.Exclude
+    private User user;
+
+    @OneToMany(mappedBy = "blog", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @ToString.Exclude
+    private List<Comment> comments;
+
 }

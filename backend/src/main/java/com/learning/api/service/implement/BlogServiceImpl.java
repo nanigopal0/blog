@@ -1,28 +1,34 @@
 package com.learning.api.service.implement;
 
 import com.learning.api.dto.BlogDataDTO;
-import com.learning.api.dto.CategoryDTO;
-import com.learning.api.dto.PageResponse;
+import com.learning.api.dto.BlogOverviewDTO;
+import com.learning.api.dto.BlogPostDTO;
+import com.learning.api.dto.BlogReactionResponseDTO;
 import com.learning.api.entity.BlogData;
+import com.learning.api.entity.BlogReaction;
 import com.learning.api.entity.Category;
 import com.learning.api.entity.User;
 import com.learning.api.exception.BlogNotFoundException;
+import com.learning.api.exception.CategoryNotFoundException;
 import com.learning.api.exception.UserNotFoundException;
+import com.learning.api.repositories.BlogReactionRepo;
 import com.learning.api.repositories.BlogRepo;
 import com.learning.api.repositories.CategoryRepo;
-import com.learning.api.repositories.CommentRepo;
 import com.learning.api.repositories.UserRepo;
 import com.learning.api.service.BlogService;
+import com.learning.api.service.CommentService;
+import com.learning.api.util.EntityToDTO;
+import com.learning.api.util.GeneralMethod;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.data.domain.*;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Optional;
+
+import static com.learning.api.util.GeneralMethod.getPageable;
 
 @Service
 @Slf4j
@@ -30,59 +36,64 @@ public class BlogServiceImpl implements BlogService {
 
     private final BlogRepo blogRepo;
     private final UserRepo userRepo;
-    private final CommentRepo commentRepo;
+    private final CommentService commentService;
     private final CategoryRepo categoryRepo;
+    private final EntityToDTO entityToDTO;
+    private final BlogReactionRepo blogReactionRepo;
 
-    BlogServiceImpl(BlogRepo blogRepo, UserRepo userRepo, CommentRepo commentRepo, CategoryRepo categoryRepo) {
+    BlogServiceImpl(BlogRepo blogRepo, UserRepo userRepo, CommentService commentService, CategoryRepo categoryRepo, EntityToDTO entityToDTO, BlogReactionRepo blogReactionRepo) {
         this.blogRepo = blogRepo;
         this.userRepo = userRepo;
-        this.commentRepo = commentRepo;
+        this.commentService = commentService;
         this.categoryRepo = categoryRepo;
+        this.entityToDTO = entityToDTO;
+        this.blogReactionRepo = blogReactionRepo;
+    }
+
+
+    @Transactional
+    @Override
+    public void createNewBlog(BlogPostDTO blog) throws UserNotFoundException {
+        Category category = categoryRepo.findById(blog.getCategoryId()).orElseThrow(() ->
+                new CategoryNotFoundException(" Id: " + blog.getCategoryId()));
+        User user = userRepo.findById(blog.getUserId()).orElseThrow(() ->
+                new UserNotFoundException("User not found! Id: " + blog.getUserId()));
+
+        BlogData blogData = new BlogData();
+        blogData.setUser(user);
+        blogData.setContent(blog.getContent());
+        blogData.setCategory(category);
+        blogData.setTime(LocalDateTime.now());
+        blogData.setTitle(blog.getTitle());
+        blogData.setCoverImage(blog.getCoverImage());
+
+        blogRepo.save(blogData);
     }
 
 
     @Override
-    public void createNewBlog(BlogData blog) throws UserNotFoundException {
-        blog.setTime(LocalDateTime.now());
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();
-        Optional<User> userOp = userRepo.findByEmail(email);
-        if (userOp.isPresent()) {
-            User user = userOp.get();
-            blog.setUserId(user.getId());
-            blog.setCategoryId(blog.getCategoryId());
-            blogRepo.save(blog);
-//            userRepo.save(user);
-        } else throw new UserNotFoundException("User not found!");
-    }
-
-
-    @Override
-    public PageResponse<BlogDataDTO> getAllBlogsOfUser(ObjectId userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
-        User user = userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException(userId.toHexString()));
+    public Page<BlogOverviewDTO> getAllBlogsOfUser(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        Page<BlogDataDTO> blogsPage = blogRepo.findBlogsByUserId(user.getId(), pageable);
-        List<BlogDataDTO> blogs = blogsPage.getContent().stream().peek(bp -> {
-            bp.setUserPhoto(user.getPhoto());
-            bp.setUserId(user.getId().toHexString());
-            bp.setUsername(user.getUsername());
-            bp.setUserFullName(user.getName());
-        }).toList();
-        return convertBlogDataDTOPageToPageResponse(new PageImpl<>(blogs, pageable, blogsPage.getTotalElements()));
+        return blogRepo.findAllBlogsByUserId(userId, pageable);
     }
 
     @Override
-    public BlogDataDTO getBlogById(ObjectId id, String sortBy, String sortOrder, int pageNumber, int pageSize) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-        BlogDataDTO blogById = blogRepo.findBlogById(id, user.getId(), getPageable(sortBy, sortOrder, pageNumber, pageSize));
-        if (blogById == null) throw new BlogNotFoundException("Blog not found!");
-        return blogById;
+    public BlogDataDTO getBlogById(Long blogId) {
+        BlogData blog = blogRepo.findById(blogId).orElseThrow(() -> new BlogNotFoundException(" Id: " + blogId));
+        Long count = blogReactionRepo.countBlogReactionsByBlogId(blogId);
+        Optional<BlogReaction> reaction = blogReactionRepo.findBlogReactionIdByUserIdAndBlogId(GeneralMethod.getCurrentUser().getId(), blogId);
+        BlogReactionResponseDTO dto = BlogReactionResponseDTO.builder()
+                .reactionId(reaction.isPresent() ? reaction.get().getId() : 0L)
+                .totalLikes(count)
+                .build();
+        return entityToDTO.convertBlogDataToBlogDataDTO(blog, dto);
     }
 
+
     @Override
+    @Transactional
     public void updateBlog(BlogDataDTO update) {
-        BlogData blog = blogRepo.findById(new ObjectId(update.getId())).orElseThrow(BlogNotFoundException::new);
+        BlogData blog = blogRepo.findById(update.getId()).orElseThrow(() -> new BlogNotFoundException(" Id: " + update.getId()));
         if (update.getContent() != null) blog.setContent(update.getContent());
         if (update.getTitle() != null) blog.setTitle(update.getTitle());
         if (update.getCoverImage() != null) blog.setCoverImage(update.getCoverImage());
@@ -90,82 +101,44 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
+    public Long countTotalBlogsByUserId(Long userId) {
+        return blogRepo.countByUser_Id(userId);
+    }
+
+    @Override
     @Transactional
-    public void deleteBlog(ObjectId id) {
-        blogRepo.findById(id).orElseThrow(() -> new BlogNotFoundException(id.toHexString()));
-        blogRepo.deleteById(id);
-        commentRepo.deleteAllByBlogId(id);
+    public void deleteBlog(Long blogId) {
+        blogRepo.findById(blogId).orElseThrow(() -> new BlogNotFoundException(" Id: " + blogId));
+        commentService.deleteAllCommentsByBlogId(blogId);  //all comments delete
+        blogReactionRepo.deleteAllByBlogId(blogId); //all blog reaction delete
+        blogRepo.deleteById(blogId);
     }
 
     @Override
-    public PageResponse<BlogDataDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+    public void deleteAllBlogsByUserId(Long userId) {
+        blogRepo.deleteAllByUserId(userId);
+    }
+
+    @Override
+    public Page<BlogOverviewDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize) {
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        List<Category> categories = categoryRepo.findByCategoryStartsWith(title);
-        List<BlogDataDTO> blogs = new ArrayList<>();
-        List<Category> matchedCategories = categories.stream().filter((category) -> category.getCategory().startsWith(title)).toList();
-        for (Category category : matchedCategories) {
-            try {
-                List<BlogDataDTO> blogsByCategory = blogRepo.findBlogsByCategory(category.getId(), pageable).getContent();
-                blogsByCategory = blogsByCategory.stream().peek(b ->
-                        b.setCategory(CategoryDTO.builder().category(category.getCategory()).id(category.getId().toHexString()).build())).toList();
-                blogs.addAll(blogsByCategory);
-            } catch (BlogNotFoundException ignored) {
-            }
-        }
-        try {
-            blogs.addAll(blogRepo.searchBlogsByTitle(title, pageable).getContent());
-        } catch (BlogNotFoundException ignored) {
-        }
-        List<BlogDataDTO> uniqueBlogs = getUniqueBlogs(blogs);
-        if (uniqueBlogs.isEmpty()) throw new BlogNotFoundException();
-        return convertBlogDataDTOPageToPageResponse(new PageImpl<>(uniqueBlogs, pageable, uniqueBlogs.size()));
-    }
-
-    private List<BlogDataDTO> getUniqueBlogs(List<BlogDataDTO> content) {
-        Map<String, BlogDataDTO> map = new HashMap<>();
-        content.forEach(blog -> {
-            if (!map.containsKey(blog.getId())) map.put(blog.getId(), blog);
-        });
-        return map.values().stream().toList();
+        return blogRepo.findByTitleStartsWith(title, pageable);
     }
 
     @Override
-    public PageResponse<BlogDataDTO> getAllBlogsByCategory(ObjectId categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize)
-            throws BlogNotFoundException {
-        Page<BlogDataDTO> blogs;
-        try {
-            Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-            blogs = blogRepo.findBlogsByCategory(categoryId, pageable);
-            return convertBlogDataDTOPageToPageResponse(blogs);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
+    public Page<BlogOverviewDTO> getAllBlogsByCategory(
+            Long categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize
+    ) throws BlogNotFoundException {
+        Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
+        return blogRepo.findAllByCategoryId(categoryId, pageable);
     }
+
 
     @Override
-    public PageResponse<BlogDataDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder) throws BlogNotFoundException {
-//        if (!checkBlogDataField(sortBy)) throw new IllegalArgumentException("Invalid sort by: " + sortBy);
-        Sort sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(pageNumber, pageSize, sort);
-        Page<BlogDataDTO> blogDataPage = blogRepo.findAllBlogsWithUserInfo(pageable);
-        return convertBlogDataDTOPageToPageResponse(blogDataPage);
+    public Page<BlogOverviewDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder) {
+        Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
+        return blogRepo.findAllBy(pageable);
     }
 
-    private PageResponse<BlogDataDTO> convertBlogDataDTOPageToPageResponse(Page<BlogDataDTO> blogDataPage) {
-        PageResponse<BlogDataDTO> pageResponse = new PageResponse<>();
-        pageResponse.setPageNumber(blogDataPage.getNumber());
-        pageResponse.setPageSize(blogDataPage.getSize());
-        pageResponse.setTotalElements(blogDataPage.getTotalElements());
-        pageResponse.setTotalPages(blogDataPage.getTotalPages());
-        pageResponse.setContent(blogDataPage.getContent());
-        pageResponse.setLastPage(blogDataPage.isLast());
-        return pageResponse;
-    }
-
-    private Pageable getPageable(String sortBy, String sortOrder, int pageNumber, int pageSize) {
-        Sort sort = sortOrder.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        return PageRequest.of(pageNumber, pageSize, sort);
-    }
 
 }

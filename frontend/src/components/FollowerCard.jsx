@@ -1,11 +1,24 @@
-export default function FollowerCard({ follower }) {
+import { User } from "lucide-react";
+
+export default function FollowerCard({ follower, onclick }) {
   return (
-    <div className="flex items-center gap-2 py-2 px-4 hover:bg-gray-300 hover:text-gray-600 rounded-sm">
-      <img
-        src={`${follower.photo}`}
-        alt="photo"
-        className="rounded-full w-14 object-cover h-14"
-      />
+    <div
+      onClick={onclick}
+      className="min-w-sm flex items-center cursor-pointer gap-4 py-2 px-4 hover:bg-gray-300 
+      hover:dark:bg-gray-700 rounded-lg border border-black/20 dark:border-white/20 
+                  bg-gray-400 dark:bg-gray-600"
+    >
+      <div className="overflow-hidden rounded-full w-12 h-12 flex-shrink-0 border">
+        {follower.photo ? (
+          <img
+            src={`${follower.photo}`}
+            alt="photo"
+            className="rounded-full object-cover scale-125 w-full h-full"
+          />
+        ) : (
+          <User size={48} />
+        )}
+      </div>
       <h3>{follower.name}</h3>
     </div>
   );

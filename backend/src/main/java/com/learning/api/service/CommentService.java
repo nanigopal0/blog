@@ -1,16 +1,18 @@
 package com.learning.api.service;
 
 import com.learning.api.dto.CommentDTO;
-import com.learning.api.entity.Comment;
-import org.bson.types.ObjectId;
 
 public interface CommentService {
 
     CommentDTO saveComment(CommentDTO comment);
 
-    String deleteComment(ObjectId commentID);
+    String deleteComment(Long commentID);
 
     String updateComment(CommentDTO comment);
 
-    Comment getComment(ObjectId commentID);
+    CommentDTO getComment(Long commentID);
+
+    void deleteAllCommentsByBlogId(Long blogId);
+
+    void deleteAllCommentsByUserId(Long userId);
 }

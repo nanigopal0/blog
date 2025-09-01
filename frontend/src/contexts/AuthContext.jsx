@@ -1,14 +1,15 @@
 import { createContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import axios from "axios";
+import apiErrorHandle from "@/util/APIErrorHandle";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // const [authToken, setAuthToken] = useState(null);
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState({});
 
-  // Load the token from cookies when the app starts
   useEffect(() => {
     initializeAuth();
   }, []);
@@ -24,9 +25,8 @@ export const AuthProvider = ({ children }) => {
   // Function to check if the user is authenticated in the backend
   const ping = async () => {
     try {
-      const response = await fetch(`/api/user/ping`, {
-        method: "GET",
-        credentials: "include",
+      const response = await axios.get(`/api/user/ping`, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  // Function to log in (set token)
+
   const login = async () => {
     const isValidToken = await ping();
     if (isValidToken) {
@@ -59,29 +59,39 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const removeCreds = () => {
+    Cookies.remove("user");
+    setIsAuthenticated(false);
+    setUserInfo(null);
+  };
+
   // Function to log out (clear token)
   const logout = async () => {
-    await fetch(`/api/user/logout`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          Cookies.remove("user");
-          setIsAuthenticated(false);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to logout", error.message || error);
+    try {
+      const response = await axios.get(`/api/user/logout`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+      if (response.status === 200) {
+        removeCreds();
+      }
+    } catch (error) {
+      apiErrorHandle(error, removeCreds);
+    }
   };
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, login, logout, userInfo, updateUserInfo }}
+      value={{
+        isAuthenticated,
+        login,
+        logout,
+        removeCreds,
+        userInfo,
+        updateUserInfo,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,14 +1,16 @@
 package com.learning.api.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -18,7 +20,7 @@ public class AESUtils {
     private static final int IV_SIZE = 16;       // AES/GCM recommended nonce (IV) size in bytes
     private static final int TAG_LENGTH_BITS = 128; // Authentication tag length in bits for GCM mode
 
-    public static SecretKey generateKey() throws Exception {
+    public static SecretKey generateKey() throws NoSuchAlgorithmException {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(KEY_SIZE_128, new SecureRandom());
         return keyGen.generateKey();
@@ -30,8 +32,9 @@ public class AESUtils {
         return nonce;
     }
 
-    public static String encryptKey(String data) throws Exception {
-
+    public static String encryptKey(String data)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+            InvalidAlgorithmParameterException, InvalidKeyException, JsonProcessingException {
         SecretKey key = generateKey();
         byte[] iv = generateNonce();
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
@@ -48,12 +51,14 @@ public class AESUtils {
     }
 
 
-    public static String decryptKey(String encryptedData) throws Exception {
+    public static String decryptKey(String encryptedData)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, JsonProcessingException,
+            InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         //decoded map data
         String decodedData = new String(Base64.getDecoder().decode(encryptedData), StandardCharsets.UTF_8);
         //get key, iv from map
-        Map<String, String> map = new ObjectMapper().readValue(decodedData, new TypeReference<Map<String, String>>() {
+        Map<String, String> map = new ObjectMapper().readValue(decodedData, new TypeReference<>() {
         });
         String encryptedToken = map.get("encryptedToken");
         String encodedKey = map.get("key");

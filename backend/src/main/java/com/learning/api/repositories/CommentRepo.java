@@ -1,12 +1,11 @@
 package com.learning.api.repositories;
 
 import com.learning.api.entity.Comment;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CommentRepo extends MongoRepository<Comment, ObjectId> {
+public interface CommentRepo extends JpaRepository<Comment, Long> {
 
-    void deleteAllByBlogId(ObjectId blogId);
+    void deleteAllByBlogId(Long blogId);
 
-    void deleteAllByUserId(ObjectId userId);
+    void deleteAllByUserId(Long userId);
 }

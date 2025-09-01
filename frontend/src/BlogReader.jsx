@@ -1,38 +1,27 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Card,
-  IconButton,
-  Button,
-  Avatar,
-  Divider,
-  TextField,
-  Collapse,
-  Chip,
-} from "@mui/material";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
-import CloseIcon from "@mui/icons-material/Close";
-import LoadingIndicator from "./util/LoadingIndicator";
+
+import LoadingIndicator from "./components/LoadingIndicator";
 import { AuthContext } from "./contexts/AuthContext";
 import Comment from "./components/Comment";
 
-import PersonIcon from "@mui/icons-material/Person";
 import FormatDate from "./util/FormatDate";
+import { Heart, PersonStanding, MessageCircle, X, User, User2 } from "lucide-react";
+import TipTapRenderer from "./util/TipTapRenderer";
+import axios from "axios";
+import apiErrorHandle from "./util/APIErrorHandle";
+import { deleteBlogById, getBlogById } from "./util/BlogUtil";
+import toast from "react-hot-toast";
 
 function BlogReader() {
   const param = useParams();
   const navigate = useNavigate();
-  
+
   const [blog, setBlog] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { userInfo, logout } = useContext(AuthContext);
+  const { userInfo,removeCreds } = useContext(AuthContext);
   const [isBlogOfCurrentUser, setIsBlogOfCurrentUser] = useState(false);
-  const [totalLikes,setTotalLikes] = useState(0);
-  // State for Heart and Comment icons
+  const [totalLikes, setTotalLikes] = useState(0);
   const [isHeartClicked, setIsHeartClicked] = useState(false);
   const [isCommentSectionVisible, setIsCommentSectionVisible] = useState(false);
 
@@ -46,30 +35,10 @@ function BlogReader() {
   const fetchBlog = async () => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `/api/blog/get-blog/${param.id}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 401) {
-        logout();
-        return;
-      }
-      if (!response.ok)
-        throw new Error(
-          "Network response was not ok" + response.text(),
-          response.statusText
-        );
-      const resultData = await response.json();
-      setVariables(resultData);
+      const response = await getBlogById(param.id);
+      setVariables(response);
     } catch (error) {
-      console.error(error.message || "Error fetching blog data");
+      apiErrorHandle(error, removeCreds);
     } finally {
       setLoading(false);
     }
@@ -80,38 +49,33 @@ function BlogReader() {
     setComments(resultData.comments || []);
     setTotalLikes(resultData?.reaction?.totalLikes || 0);
     setIsBlogOfCurrentUser(userInfo && resultData.userId === userInfo.id);
-    setIsHeartClicked(resultData?.reaction?.userLiked);
-  }
+    setIsHeartClicked(
+      resultData.reaction.reactionId && resultData?.reaction?.reactionId != 0
+    );
+  };
 
   const handleReaction = async () => {
     try {
       const response = !isHeartClicked
-      ? await likeCall()
+        ? await likeCall()
         : await dislikeCall(blog?.reaction?.reactionId); //reaction id
 
-        const reactionId = await response.text();
-        console.log(reactionId);
-      if (response.status == 401) {
-        logout();
-        return;
-      }
+      const reaction = response.data;
+
       if (response.status == 200) {
         const updatedBlog = {
           ...blog,
           reaction: {
-            ...blog.reaction,
-            reactionId: isHeartClicked ? blog?.reaction?.reactionId : reactionId,
-            totalLikes: isHeartClicked
-              ? totalLikes - 1
-              : totalLikes + 1,
+            reactionId: reaction?.reactionId,
+            totalLikes: reaction?.totalLikes,
           },
         };
-        setTotalLikes(l=> !isHeartClicked ? l+1: l-1);
-        setIsHeartClicked((prev) => !prev);
+        setTotalLikes(reaction.totalLikes);
+        setIsHeartClicked(reaction.reactionId && reaction.reactionId != 0);
         setBlog(updatedBlog);
       }
     } catch (error) {
-      console.error(error.message || "Error fetching blog data");
+      apiErrorHandle(error, removeCreds);
     }
   };
 
@@ -120,10 +84,8 @@ function BlogReader() {
       userId: userInfo.id,
       blogId: blog.id,
     };
-    return await fetch(`/api/blog/reaction/like`, {
-      method: "POST",
-      body: JSON.stringify(data),
-      credentials: "include",
+    return await axios.post(`/api/blog/reaction/like`, data, {
+      withCredentials: true,
       headers: {
         "Content-Type": "application/json",
       },
@@ -131,15 +93,15 @@ function BlogReader() {
   };
 
   const dislikeCall = async (reactionId) => {
-    console.log(reactionId);
-    return await fetch(`/api/blog/reaction/dislike`, {
-      method: "POST",
-      body: JSON.stringify(reactionId),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return await axios.delete(
+      `/api/blog/reaction/dislike?blogReactionId=${reactionId}`,
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   };
 
   const handlePostComment = async () => {
@@ -153,300 +115,206 @@ function BlogReader() {
         comment: newComment,
       };
 
-      const response = await fetch(`/api/comment`, {
-        method: "POST",
-        body: JSON.stringify(newCommentData),
-        credentials: "include",
+      const response = await axios.post(`/api/comment`, newCommentData, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
       });
-      if (response.status == 401) {
-        logout();
-        return;
-      }
+
       if (response.status == 201) {
-        setComments([newCommentData, ...comments]);
+        setComments([response.data, ...comments]);
         setNewComment("");
       }
     } catch (error) {
-      console.error(error.message || "Error fetching blog data");
+      apiErrorHandle(error, removeCreds);
     }
   };
 
+  const handleDeleteBlog = async () => {
+    try{
+      const response = await deleteBlogById(blog.id);
+      toast.success(response || "Blog deleted successfully");
+      navigate("/home");
+    }catch(error){
+      apiErrorHandle(error, removeCreds);
+    }finally{
+      setLoading(false);
+    }
+  }
+
+  const handleUserClick = () => {
+    navigate(`/user/${blog.userId}`);
+  };
+
   return (
-    <Box
-      sx={{
-        p: { xs: 2, sm: 3, md: 5 }, // Adjust margins for different screen sizes
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "background.body",
-      }}
-    >
+    <div className="p-4 sm:p-6 md:p-10 flex justify-center items-center min-h-screen ">
       {loading && <LoadingIndicator />}
       {blog && (
-        <Card
-          sx={{
-            width: { xs: "100%", sm: "90%", md: "85%", lg: "75%"}, // Full width for small screens
-            p: { xs: 2, sm: 3, md: 4 }, // Adjust padding for different screen sizes
-            boxShadow: 4,
-            borderRadius: 2,
-            backgroundColor: "background.body",
-          }}
-        >
+        <div className="w-full sm:w-11/12 md:w-4/5 lg:w-3/4 p-4 sm:p-6 md:p-8 rounded-lg">
           {/* Blog Cover Image */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: { xs: 2, sm: 3, md: 4 },
-              overflow: "hidden",
-              borderRadius: 2,
-            }}
-          >
+          <div className="flex justify-center mb-4 sm:mb-6 md:mb-8 overflow-hidden rounded-2xl">
             <img
               src={blog.coverImage}
               alt="cover"
-              style={{
-                width: "100%",
-                maxHeight: "400px",
-                objectFit: "contain",
-                borderRadius: "8px",
-              }}
+              className="w-full max-h-96 object-contain rounded-2xl"
             />
-          </Box>
+          </div>
 
           {/* Blog Author Info */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: { xs: 2, sm: 3 },
-            }}
-          >
-            <Avatar
-              src={blog.userPhoto || undefined}
-              alt={blog.userFullName}
-              sx={{
-                width: { xs: 40, sm: 56 },
-                height: { xs: 40, sm: 56 },
-                mr: 2,
-                border: "1px solid gray",
-              }}
+          <div className="flex items-center mb-4 sm:mb-6">
+            <div
+              onClick={handleUserClick}
+              className="w-10 h-10 sm:w-14 sm:h-14 mr-4 rounded-full overflow-hidden border cursor-pointer border-gray-300 flex items-center justify-center "
             >
-              {!blog.userPhoto && (
-                <PersonIcon sx={{ fontSize: { xs: 20, sm: 28 } }} />
+              {blog.userPhoto ? (
+                <img
+                  src={blog.userPhoto}
+                  alt={blog.userFullName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-full h-full sm:w-7 sm:h-7 text-gray-500" />
               )}
-            </Avatar>
-            <Box>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: "bold",
-                  fontSize: { xs: "1rem", sm: "1.25rem" },
-                }}
+            </div>
+            <div>
+              <h3
+                className="font-bold cursor-pointer text-base sm:text-xl "
+                onClick={handleUserClick}
               >
                 {blog.userFullName}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ color: "gray", fontSize: { xs: "0.8rem", sm: "1rem" } }}
-              >
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
                 {FormatDate(blog.time)}
-              </Typography>
-            </Box>
-          </Box>
+              </p>
+            </div>
+          </div>
 
           {/* Blog Title */}
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: "bold",
-              mb: { xs: 1, sm: 2 },
-              textAlign: "left",
-              fontSize: { xs: "1.5rem", sm: "2rem" },
-            }}
-          >
+          <h1 className="font-bold mb-2 sm:mb-4 text-left text-2xl sm:text-4xl ">
             {blog.title}
-          </Typography>
+          </h1>
 
           {/* Blog Category */}
-          <Chip
-            label={blog.category?.category || "Uncategorized"}
-            sx={{
-              mb: { xs: 2, sm: 3 },
-              backgroundColor: "#e0f7fa",
-              color: "#00796b",
-              fontWeight: "bold",
-              fontSize: { xs: "0.8rem", sm: "1rem" },
-            }}
-          />
+          <div className="mb-4 sm:mb-6">
+            <span className="inline-block bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm font-bold">
+              {blog.category?.category || "Uncategorized"}
+            </span>
+          </div>
 
           {/* Blog Content */}
-          <Typography
-            variant="body1"
-            sx={{
-              textAlign: "justify",
-              mb: { xs: 2, sm: 4 },
-              fontSize: { xs: "0.9rem", sm: "1rem" },
-            }}
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-          ></Typography>
+          <div
+            className="text-justify mb-4 sm:mb-8 text-sm sm:text-base  prose prose-sm sm:prose max-w-none "
+            // dangerouslySetInnerHTML={{ __html: blog.content }}
+          >
+            {blog && <TipTapRenderer content={blog.content} />}
+          </div>
 
-          <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
+          <hr className="mb-4 sm:mb-6 border-gray-600" />
 
           {/* Icons Section */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: { xs: 1, sm: 2 },
-              mb: { xs: 2, sm: 3 },
-            }}
-          >
+          <div className="flex items-center justify-start gap-2 sm:gap-4 mb-4 sm:mb-6">
             {/* Heart Icon with Like Count */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                border: "1px solid",
-                borderRadius: "20px",
-                padding: { xs: "2px 6px", sm: "4px 8px" },
-                gap: 1,
-              }}
+            <div
+              className="flex items-center border border-gray-600 dark:border-gray-400 rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
+            cursor-pointer hover:bg-gray-50 hover:dark:bg-gray-800 transition-colors"
             >
-              <IconButton
-                onClick={() => handleReaction()}
-                sx={{
-                  color: isHeartClicked ? "red" : "primary.paper",
-                  padding: 0,
-                }}
+              <button
+                onClick={handleReaction}
+                className="p-0 focus:outline-none"
               >
-                {isHeartClicked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-              </IconButton>
-              <Typography
-                variant="body2"
-                sx={{
-       
-                  fontWeight: "bold",
-                  fontSize: { xs: "0.8rem", sm: "1rem" },
-                }}
-              >
+                <Heart
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    isHeartClicked
+                      ? "text-red-500 fill-red-500"
+                      : "text-gray-700 dark:text-gray-300"
+                  } hover:text-red-500 transition-colors`}
+                />
+              </button>
+              <span className="font-bold text-sm sm:text-base text-gray-700 dark:text-gray-300">
                 {totalLikes || 0}
-              </Typography>
-            </Box>
+              </span>
+            </div>
 
             {/* Comment Icon with Comment Count */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                border: "1px solid ",
-                borderRadius: "20px",
-                padding: { xs: "2px 6px", sm: "4px 8px" },
-                gap: 1,
-              }}
+            <div
+              className="flex items-center border border-gray-600 dark:border-gray-400 rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
+              cursor-pointer hover:bg-gray-50 hover:dark:bg-gray-800 transition-colors"
               onClick={() =>
                 setIsCommentSectionVisible(!isCommentSectionVisible)
               }
             >
-              <IconButton
-              color="primary.main"
-              
-                sx={{
-                  // color: isCommentSectionVisible ? "primary.main" : "gray",
-
-                  padding: 0,
-                }}
-              >
+              <button className="p-0 focus:outline-none">
                 {isCommentSectionVisible ? (
-                  <CloseIcon />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-300" />
                 ) : (
-                  <CommentOutlinedIcon />
+                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-300" />
                 )}
-              </IconButton>
-              <Typography
-                variant="body2"
-                sx={{
-                  
-                  fontWeight: "bold",
-                  fontSize: { xs: "0.8rem", sm: "1rem" },
-                }}
-              >
+              </button>
+              <span className="font-bold text-sm sm:text-base text-gray-700 dark:text-gray-300">
                 {comments.length}
-              </Typography>
-            </Box>
-          </Box>
+              </span>
+            </div>
+          </div>
 
           {/* Comments Section */}
-          <Collapse in={isCommentSectionVisible}>
-            <Divider sx={{ mb: { xs: 2, sm: 3 } }} />
-            <Typography
-              variant="h5"
-              sx={{
-                mb: { xs: 1, sm: 2 },
-                fontSize: { xs: "1.2rem", sm: "1.5rem" },
-              }}
-            >
-              Comments
-            </Typography>
-            <Box sx={{ mb: { xs: 2, sm: 3 } }}>
-              <TextField
-                fullWidth
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                sx={{ mb: { xs: 1, sm: 2 } }}
-              />
-              <Button
-                variant="contained"
-                onClick={handlePostComment}
-                disabled={!newComment.trim()}
-              >
-                Post Comment
-              </Button>
-            </Box>
-            {comments.map((comment) => (
-              <Comment
-                key={comment.id}
-                photo={comment.userPhoto}
-                name={comment.userFullName}
-                time={comment.commentedAt}
-                text={comment.comment}
-              />
-            ))}
-          </Collapse>
+          {isCommentSectionVisible && (
+            <div className="transition-all duration-300">
+              <h2 className="mb-2 sm:mb-4 text-xl sm:text-2xl font-semibold ">
+                Comments
+              </h2>
+              <div className="mb-4 sm:mb-6">
+                <textarea
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical min-h-20"
+                  placeholder="Add a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <button
+                  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  onClick={handlePostComment}
+                  disabled={!newComment.trim()}
+                >
+                  Post Comment
+                </button>
+              </div>
+              <div className="space-y-4">
+                {comments.map((comment, index) => (
+                  <Comment
+                    key={comment.id || index}
+                    photo={comment.userPhoto}
+                    name={comment.userFullName}
+                    time={comment.commentedAt}
+                    text={comment.comment}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Edit and Delete Buttons */}
           {isBlogOfCurrentUser && (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                mt: { xs: 2, sm: 3 },
-              }}
-            >
-              <Button
-                variant="contained"
-                onClick={() => navigate(`/edit-blog/${blog.id}`)}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => console.log("Delete blog")}
-              >
-                Delete
-              </Button>
-            </Box>
+            <div className="mt-8">
+              <hr className="mb-4 sm:mb-6 border-gray-600" />
+              <div className="flex justify-between mt-4 sm:mt-6 gap-4">
+                <button
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  onClick={() => navigate(`/edit-blog/${blog.id}`)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                  onClick={ handleDeleteBlog}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           )}
-        </Card>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
 

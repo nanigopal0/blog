@@ -7,21 +7,18 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class JwtService {
 
-    private final String SECRET = "ufhfirfkfrff3wHHfsrjfn48jhuIFEFfjai4343jffjfu3wjf9";
-    private final long VALIDITY = 24 * 60 * 60 * 1000;
+    private static final String SECRET = UUID.randomUUID().toString();
+    private static final long VALIDITY = 24 * 60 * 60 * 1000;
 
-    public String generateToken(String username, String name, String id, String role, String email) {
+    public String generateToken(String username, String name, Long id, String role, String email) {
         Map<String, String> claims = new HashMap<>();
         claims.put("name", name);
-        claims.put("id", id);
+        claims.put("id", id.toString());
         claims.put("role", role);
         claims.put("username", username);
         return Jwts.builder()

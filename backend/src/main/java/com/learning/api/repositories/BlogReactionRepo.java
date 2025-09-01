@@ -1,8 +1,17 @@
 package com.learning.api.repositories;
 
 import com.learning.api.entity.BlogReaction;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface BlogReactionRepo extends MongoRepository<BlogReaction, ObjectId> {
+import java.util.Optional;
+
+public interface BlogReactionRepo extends JpaRepository<BlogReaction, Long> {
+    void deleteAllByBlogId(Long blogId);
+
+    void deleteAllByUserId(Long userId);
+
+    Long countBlogReactionsByBlogId(Long blogId);
+
+    Optional<BlogReaction> findBlogReactionIdByUserIdAndBlogId(Long userId, Long blogId);
+
 }

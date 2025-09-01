@@ -1,112 +1,98 @@
 import { useContext, useEffect, useState } from "react";
-import { handleResponseFromFetchBlog } from "./util/HandleResponse";
-import LoadingIndicator from "./util/LoadingIndicator";
-
-import { Box, Typography } from "@mui/material";
+import LoadingIndicator from "./components/LoadingIndicator";
 import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
 import MediaCard from "./components/MediaCard";
 import { AuthContext } from "./contexts/AuthContext";
 import PaginationRounded from "./components/PaginationRounded";
+import { getBlogsByUser } from "./util/BlogUtil";
+import apiErrorHandle from "./util/APIErrorHandle";
+import HeaderFilter from "./components/HeaderFilter";
 
 function Dashboard() {
-  const [myBlogs, setMyBlogs] = useState([]);
+  const [myBlogPage, setMyBlogPage] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(ConstBlogPageSize[0]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
-  const [last, setLast] = useState(false);
-  const { userInfo } = useContext(AuthContext);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(ConstBlogPageSize[0]);
+  const { userInfo, removeCreds } = useContext(AuthContext);
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [sortBy, setSortBy] = useState("time");
+  const sortByItems = ["time", "title"];
 
-  async function fetchData(pageN, pageS) {
+  async function fetchData() {
     setLoading(true);
     try {
-      const result = await fetch(
-        `/api/blog/get-all-of-user?userId=${userInfo.id}&pageNumber=${pageN}&pageSize=${pageS}`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+      const resultData = await getBlogsByUser(
+        userInfo.id,
+        page,
+        pageSize,
+        sortBy,
+        sortOrder
       );
-
-      const resultData = await handleResponseFromFetchBlog(result); // Parse the text from the response
-      console.log(resultData);
-      setMyBlogs(resultData.content);
-      setLast(resultData.lastPage);
-      setPage(resultData.pageNumber + 1);
-      setTotalPages(resultData.totalPages);
-      setTotalElements(resultData.totalElements);
-      setRowsPerPage(resultData.pageSize);
+      setMyBlogPage(resultData);
+      setPage(resultData.number);
+      setPageSize(resultData.size);
     } catch (error) {
-      console.error("There has been a problem with fetch operation:", error);
+      apiErrorHandle(error, removeCreds);
     } finally {
       setLoading(false);
     }
   }
-  const fetchBlog = async (pageNumber, pageSize) => {
-    setLoading(true);
-    const fetchedBlogs = await fetchData(pageNumber, pageSize);
-
-    if (fetchedBlogs && fetchedBlogs.content) {
-      setMyBlogs(fetchedBlogs.content);
-      setPage(fetchedBlogs.pageNumber + 1);
-      setRowsPerPage(fetchedBlogs.pageSize);
-      setLast(fetchedBlogs.isLastPage);
-      setTotalPages(fetchedBlogs.totalPages);
-      setTotalElements(fetchedBlogs.totalElements);
-    }
-    setLoading(false);
-  };
 
   useEffect(() => {
-    fetchData(page - 1, rowsPerPage);
-  }, []);
+    fetchData();
+  }, [userInfo?.id, pageSize, page, sortBy, sortOrder]);
 
   return (
-    <Box
-      sx={{ padding: 4, height: "100vh", backgroundColor: "background.body" }}
-    >
+    <div className="p-8 min-h-screen">
       {/* Recent Blogs Section */}
-      <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 2 }}>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
         My Blogs
-      </Typography>
+      </h2>
+
+      <div className="max-w-lg mx-auto mb-6">
+        <HeaderFilter
+          onChangeSortBy={(e) => setSortBy(e.target.value)}
+          onChangeSortOrder={(e) => setSortOrder(e.target.value)}
+          sortByItems={sortByItems}
+          sortByValue={sortBy}
+          sortOrderValue={sortOrder}
+        />
+      </div>
 
       <div className="min-h-3/4">
-        <div className="w-full grid gap-4 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          {myBlogs &&
-            myBlogs.map((element) => 
-               <MediaCard key={element.id} blog={element} />
-            )}
-          {loading ? <LoadingIndicator /> : <></>}
+        <div className="w-full grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {myBlogPage &&
+            myBlogPage.content &&
+            myBlogPage.content.map((blog) => (
+              <MediaCard key={blog.blogId} blog={blog} />
+            ))}
+          {loading && <LoadingIndicator />}
         </div>
 
-        {myBlogs.length === 0 && !loading && (
-          <Typography
-            variant="body1"
-            sx={{ textAlign: "center", marginTop: 2 }}
-          >
+        {(!myBlogPage || myBlogPage.empty) && !loading && (
+          <p className="text-center mt-8 text-gray-600 dark:text-gray-400 text-base">
             No blogs found.
-          </Typography>
+          </p>
         )}
       </div>
 
       {/* Pagination */}
-      {myBlogs.length > 0 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+      {!myBlogPage.empty && (
+        <div className="flex justify-center mt-8">
           <PaginationRounded
-            pageNumber={page}
-            pageSize={rowsPerPage}
-            onChangePage={fetchBlog}
-            isLastPage={last}
-            totalElements={totalElements}
-            totalPages={totalPages}
+            pageNumber={page + 1}
+            pageSize={pageSize}
+            onChangePage={(pn, ps) => {
+              setPage(pn);
+              setPageSize(ps);
+            }}
+            isLastPage={(myBlogPage && myBlogPage.last) || true}
+            totalElements={(myBlogPage && myBlogPage.totalElements) || 0}
+            totalPages={(myBlogPage && myBlogPage.totalPages) || 0}
           />
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 }
 

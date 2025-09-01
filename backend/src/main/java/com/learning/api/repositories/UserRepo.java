@@ -1,19 +1,21 @@
 package com.learning.api.repositories;
 
+import com.learning.api.dto.UserOverviewDTO;
 import com.learning.api.entity.User;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 
 
-public interface UserRepo extends MongoRepository<User, ObjectId> {
+public interface UserRepo extends JpaRepository<User, Long> {
 
 
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUsername(String username);
 
-    Optional<List<User>> findAllByName(String name);
+
+    Page<UserOverviewDTO> findUsersByNameStartsWith(String name, Pageable pageable);
 }

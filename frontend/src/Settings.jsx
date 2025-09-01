@@ -1,28 +1,20 @@
 import React, { useContext, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Avatar,
-  Button,
-  TextField,
-  Typography,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-} from "@mui/material";
-import LoadingIndicator from "./util/LoadingIndicator";
-import { handleResponseFromFetchBlog } from "./util/HandleResponse";
+
+import LoadingIndicator from "./components/LoadingIndicator";
 
 import { uploadImage } from "./util/UploadImageCloudinary";
 import Cookies from "js-cookie";
 import { AuthContext } from "./contexts/AuthContext";
+import axios from "axios";
+import apiErrorHandle from "./util/APIErrorHandle";
 
 function Settings() {
-
-  const { userInfo, authToken, logout } = useContext(AuthContext);
-  const [changePasswordButtonClicked, setChangePasswordButtonClicked] = useState(false);
-  const [updateProfileButtonClicked, setUpdateProfileButtonClicked] = useState(false);
+  const { userInfo, logout, removeCreds } = useContext(AuthContext);
+  const [changePasswordButtonClicked, setChangePasswordButtonClicked] =
+    useState(false);
+  const [updateProfileButtonClicked, setUpdateProfileButtonClicked] =
+    useState(false);
   const profileImageRef = useRef(null);
   const [profileImageInput, setProfileImageInput] = useState(null);
   const [fullNameInput, setFullNameInput] = useState(userInfo.name);
@@ -45,21 +37,18 @@ function Settings() {
         email: emailInput,
         photo: profileImageUrl,
       };
-      const response = await fetch(`/api/register/update`, {
-        method: "PUT",
+      const response = await axios.put(`/api/user/update`, data, {
+        withCredentials: true,
         headers: {
-          Authorization: authToken,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
       });
-
-      await handleResponseFromFetchBlog(response);
-      setLoading(false);
+      console.log(response.data);
       setUpdateProfileButtonClicked(false);
     } catch (error) {
+      apiErrorHandle(error,()=>{})
+    } finally {
       setLoading(false);
-      console.error("Error updating profile:", error);
     }
   };
 
@@ -73,195 +62,215 @@ function Settings() {
         id: userInfo.id,
         password: newPasswordInput,
       };
-      const response = await fetch(`/api/register/update`, {
-        method: "PUT",
+      const response = await axios.put(`/api/user/update`, data, {
+        withCredentials: true,
         headers: {
-          Authorization: authToken,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
       });
+      console.log(response.data);
 
-      await handleResponseFromFetchBlog(response);
-      setLoading(false);
       setChangePasswordButtonClicked(false);
     } catch (error) {
+     apiErrorHandle(error,removeCreds);
+    } finally {
       setLoading(false);
-      console.error("Error changing password:", error);
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/register/delete`, {
-        method: "DELETE",
+      const response = await axios.delete(`/api/user/delete`, {
+        withCredentials: true,
         headers: {
-          Authorization: authToken,
           "Content-Type": "application/json",
         },
       });
       if (response.status === 204) {
+        console.log(response.data);
         Cookies.remove("token");
         navigate("/login");
         logout();
       }
     } catch (error) {
+     apiErrorHandle(error,removeCreds);
+    } finally {
       setLoading(false);
-      console.error("Error deleting account:", error);
     }
   };
 
   return (
-    <Box
-      sx={{
-        p: 5,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "background.body",
-      }}
-    >
+    <div className="p-5 flex justify-center items-center min-h-screen ">
       {loading && <LoadingIndicator />}
-      <Card
-        sx={{
-          width: "100%",
-          maxWidth: 600,
-          p: 3,
-          boxShadow: 4,
-          borderRadius: 2,
-          backgroundColor: "background.body",
-        }}
-      >
-        <CardContent>
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Avatar
-              onClick={() => updateProfileButtonClicked && profileImageRef.current.click()}
-              sx={{
-                bgcolor: "primary.main",
-                width: 150,
-                height: 150,
-                mb: 3,
-                cursor: updateProfileButtonClicked ? "pointer" : "default",
-              }}
-              src={
-                profileImageInput
-                  ? URL.createObjectURL(profileImageInput)
-                  : userInfo.photo
-              }
-            >
-              <Typography variant="h3">
-                {userInfo.name.charAt(0).toUpperCase()}
-              </Typography>
-            </Avatar>
-            <input
-              ref={profileImageRef}
-              hidden
-              type="file"
-              onChange={(e) => setProfileImageInput(e.target.files[0])}
-            />
-            {updateProfileButtonClicked && (
-              <>
-                <TextField
-                  fullWidth
-                  label="Full Name"
+
+      <div className="w-full max-w-2xl p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+        {/* Profile Section */}
+        <div className="flex flex-col items-center mb-6">
+          {/* Avatar */}
+          <div
+            onClick={() =>
+              updateProfileButtonClicked && profileImageRef.current.click()
+            }
+            className={`w-36 h-36 mb-6 rounded-full flex items-center justify-center text-white text-4xl font-bold bg-blue-600 overflow-hidden ${
+              updateProfileButtonClicked
+                ? "cursor-pointer hover:bg-blue-700"
+                : "cursor-default"
+            } transition-colors`}
+          >
+            {profileImageInput ? (
+              <img
+                src={URL.createObjectURL(profileImageInput)}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : userInfo.photo ? (
+              <img
+                src={userInfo.photo}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              userInfo.name.charAt(0).toUpperCase()
+            )}
+          </div>
+
+          <input
+            ref={profileImageRef}
+            hidden
+            type="file"
+            accept="image/*"
+            onChange={(e) => setProfileImageInput(e.target.files[0])}
+          />
+
+          {/* Update Profile Form */}
+          {updateProfileButtonClicked && (
+            <div className="w-full space-y-4">
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
                   value={fullNameInput}
                   onChange={(e) => setFullNameInput(e.target.value)}
-                  sx={{ mb: 2 }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-                <TextField
-                  fullWidth
-                  label="Email"
+              </div>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  sx={{ mb: 2 }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-              </>
-            )}
-            {changePasswordButtonClicked && (
-              <>
-                <TextField
-                  fullWidth
-                  label="New Password"
+              </div>
+            </div>
+          )}
+
+          {/* Change Password Form */}
+          {changePasswordButtonClicked && (
+            <div className="w-full space-y-4">
+              <div>
+                <label
+                  htmlFor="newPassword"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  New Password
+                </label>
+                <input
+                  id="newPassword"
                   type="password"
                   value={newPasswordInput}
                   onChange={(e) => setNewPasswordInput(e.target.value)}
-                  sx={{ mb: 2 }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-                <TextField
-                  fullWidth
-                  label="Re-enter New Password"
+              </div>
+              <div>
+                <label
+                  htmlFor="reEnterPassword"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Re-enter New Password
+                </label>
+                <input
+                  id="reEnterPassword"
                   type="password"
                   value={reEnterNewPasswordInput}
                   onChange={(e) => setReEnterNewPasswordInput(e.target.value)}
-                  sx={{ mb: 2 }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
-              </>
-            )}
-          </Box>
-        </CardContent>
-        <Divider />
-        <CardActions sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4 mt-6">
           {!updateProfileButtonClicked && !changePasswordButtonClicked && (
             <>
-              <Button
-                variant="contained"
-                fullWidth
+              <button
                 onClick={() => setUpdateProfileButtonClicked(true)}
-                sx={{ backgroundColor: "#1976d2", color: "white" }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
               >
                 Update Profile
-              </Button>
-              <Button
-                variant="contained"
-                fullWidth
-                color="secondary"
+              </button>
+              <button
                 onClick={() => setChangePasswordButtonClicked(true)}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
               >
                 Change Password
-              </Button>
+              </button>
             </>
           )}
+
           {(updateProfileButtonClicked || changePasswordButtonClicked) && (
-            <Box sx={{ display: "flex", gap: 2, width: "100%" }}>
-              <Button
-                variant="contained"
-                color="success"
-                fullWidth
+            <div className="flex gap-4 w-full">
+              <button
                 onClick={
                   updateProfileButtonClicked
                     ? handleUpdateProfile
                     : handleChangePassword
                 }
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
               >
                 Save
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                fullWidth
+              </button>
+              <button
                 onClick={() => {
                   setUpdateProfileButtonClicked(false);
                   setChangePasswordButtonClicked(false);
                 }}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
               >
                 Cancel
-              </Button>
-            </Box>
+              </button>
+            </div>
           )}
-          <Button
-            variant="contained"
-            fullWidth
-            color="error"
+
+          <button
             onClick={handleDeleteAccount}
-            sx={{ mt: 2 }}
+            className="w-full bg-red-500 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 mt-2"
           >
             Delete Account
-          </Button>
-        </CardActions>
-      </Card>
-    </Box>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

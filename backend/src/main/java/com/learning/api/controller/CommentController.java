@@ -1,10 +1,8 @@
 package com.learning.api.controller;
 
 import com.learning.api.dto.CommentDTO;
-import com.learning.api.entity.Comment;
 import com.learning.api.service.CommentService;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,42 +19,22 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> saveComment(@RequestBody CommentDTO comment) {
-        try {
-            return new ResponseEntity<>(commentService.saveComment(comment), HttpStatus.CREATED);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<CommentDTO> saveComment(@RequestBody CommentDTO comment) {
+        return new ResponseEntity<>(commentService.saveComment(comment), HttpStatus.CREATED);
     }
 
     @DeleteMapping
-    public ResponseEntity<String> deleteComment(@RequestParam(value = "commentID") ObjectId commentID) {
-        try {
-            return new ResponseEntity<>(commentService.deleteComment(commentID), HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<String> deleteComment(@RequestParam(value = "commentID") Long commentID) {
+        return new ResponseEntity<>(commentService.deleteComment(commentID), HttpStatus.NO_CONTENT);
     }
 
     @PutMapping
     public ResponseEntity<String> updateComment(@RequestBody CommentDTO comment) {
-        try {
-            return new ResponseEntity<>(commentService.updateComment(comment), HttpStatus.OK);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(commentService.updateComment(comment), HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<Comment> getComment(@RequestParam(value = "commentID") ObjectId commentID) {
-        try {
-            return new ResponseEntity<>(commentService.getComment(commentID), HttpStatus.CREATED);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.internalServerError().build();
-        }
+    public ResponseEntity<CommentDTO> getComment(@RequestParam(value = "commentID") Long commentID) {
+        return new ResponseEntity<>(commentService.getComment(commentID), HttpStatus.CREATED);
     }
 }

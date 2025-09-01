@@ -1,11 +1,20 @@
 package com.learning.api.repositories;
 
+import com.learning.api.dto.CategoryDTO;
 import com.learning.api.entity.Category;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface CategoryRepo extends MongoRepository<Category, ObjectId> {
-    List<Category> findByCategoryStartsWith(String category);
+@Repository
+public interface CategoryRepo extends JpaRepository<Category, Long> {
+    //    @Query("""
+//                SELECT c.id AS categoryId,c.category AS categoryName from Category c WHERE c.category LIKE :categoryName%
+//            """)
+    List<CategoryDTO> findCategoriesByCategoryStartsWith(@Param("categoryName") String categoryName);
+
+
+    List<CategoryDTO> findAllBy();
 }

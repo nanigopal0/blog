@@ -12,7 +12,6 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,7 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 if (jwtService.isTokenValid(token)) {
                     BaseUser user = new BaseUser();
-                    user.setId(new ObjectId(jwtClaims.get("id", String.class)));
+                    user.setId(Long.parseLong(jwtClaims.get("id", String.class)));
                     user.setRole(Role.valueOf(jwtClaims.get("role", String.class)));
                     user.setUsername(jwtClaims.get("username", String.class));
                     user.setName(jwtClaims.get("name", String.class));

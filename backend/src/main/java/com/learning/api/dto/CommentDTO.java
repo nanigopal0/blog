@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class CommentDTO {
-    private String id;
-    private String userId;
-    private String blogId;
+    private Long id;
+    private Long userId;
+    private Long blogId;
     private LocalDateTime commentedAt;
     private String userFullName;    //commenter name
     private String userPhoto;       //commenter photo

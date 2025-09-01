@@ -1,102 +1,97 @@
+import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import React from "react";
-import { Box, Typography, Grid, Link, IconButton, Container } from "@mui/material";
-import { Facebook, Twitter, Instagram, LinkedIn } from "@mui/icons-material";
-import { useTheme } from "@mui/material/styles"; // Import the theme hook
 
 export default function Footer() {
-  const theme = useTheme(); // Access the Material-UI theme
-
+  
   return (
-    <Box
-      sx={{
-        backgroundColor: "black", // Use primary color from the theme
-        color: "white",
-        py: 6
-      }}
-    >
-      <Container maxWidth="lg">
-        <Grid container spacing={4}>
+    <footer className="bg-black text-white py-12">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {/* About Section */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <div>
+            <h3 className="text-lg font-bold mb-4">
               About Blogify
-            </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+            </h3>
+            <p className="text-gray-300 text-sm leading-relaxed">
               Blogify is your go-to platform for sharing ideas, connecting with
               others, and exploring amazing blogs from around the world.
-            </Typography>
-          </Grid>
+            </p>
+          </div>
 
           {/* Quick Links Section */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <div>
+            <h3 className="text-lg font-bold mb-4">
               Quick Links
-            </Typography>
-            <Box>
-              <Link href="/" color="inherit" underline="hover" sx={{ display: "block", mb: 1 }}>
+            </h3>
+            <div className="space-y-2">
+              <a href="/" className="block text-gray-300 hover:text-white hover:underline transition-colors duration-200">
                 Home
-              </Link>
-              <Link href="/about" color="inherit" underline="hover" sx={{ display: "block", mb: 1 }}>
+              </a>
+              <a href="/about" className="block text-gray-300 hover:text-white hover:underline transition-colors duration-200">
                 About Us
-              </Link>
-              <Link href="/contact" color="inherit" underline="hover" sx={{ display: "block", mb: 1 }}>
+              </a>
+              <a href="/contact" className="block text-gray-300 hover:text-white hover:underline transition-colors duration-200">
                 Contact
-              </Link>
-              <Link href="/privacy" color="inherit" underline="hover" sx={{ display: "block", mb: 1 }}>
+              </a>
+              <a href="/privacy" className="block text-gray-300 hover:text-white hover:underline transition-colors duration-200">
                 Privacy Policy
-              </Link>
-            </Box>
-          </Grid>
+              </a>
+            </div>
+          </div>
 
           {/* Social Media Section */}
-          <Grid item xs={12} sm={6} md={4}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+          <div>
+            <h3 className="text-lg font-bold mb-4">
               Follow Us
-            </Typography>
-            <Box>
-              <IconButton
+            </h3>
+            <div className="flex space-x-4">
+              <a
                 href="https://facebook.com"
                 target="_blank"
-                rel="noopener"
-                sx={{ color: "white" }}
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+                aria-label="Follow us on Facebook"
               >
-                <Facebook />
-              </IconButton>
-              <IconButton
+                <Facebook size={24} />
+              </a>
+              <a
                 href="https://twitter.com"
                 target="_blank"
-                rel="noopener"
-                sx={{ color: "white" }}
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+                aria-label="Follow us on Twitter"
               >
-                <Twitter />
-              </IconButton>
-              <IconButton
+                <Twitter size={24} />
+              </a>
+              <a
                 href="https://instagram.com"
                 target="_blank"
-                rel="noopener"
-                sx={{ color: "white" }}
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+                aria-label="Follow us on Instagram"
               >
-                <Instagram />
-              </IconButton>
-              <IconButton
+                <Instagram size={24} />
+              </a>
+              <a
                 href="https://linkedin.com"
                 target="_blank"
-                rel="noopener"
-                sx={{ color: "white" }}
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-white transition-colors duration-200"
+                aria-label="Follow us on LinkedIn"
               >
-                <LinkedIn />
-              </IconButton>
-            </Box>
-          </Grid>
-        </Grid>
+                <Linkedin size={24} />
+              </a>
+            </div>
+          </div>
+        </div>
 
         {/* Copyright Section */}
-        <Box sx={{ textAlign: "center", mt: 4 }}>
-          <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.8)" }}>
+        <div className="text-center mt-8 pt-8 border-t border-gray-700">
+          <p className="text-gray-300 text-sm">
             © {new Date().getFullYear()} Blogify. All rights reserved.
-          </Typography>
-        </Box>
-      </Container>
-    </Box>
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 }

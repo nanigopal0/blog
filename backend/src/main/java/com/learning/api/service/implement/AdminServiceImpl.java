@@ -12,7 +12,6 @@ import com.learning.api.service.AdminService;
 import com.learning.api.service.CookieService;
 import com.learning.api.util.GeneralMethod;
 import jakarta.servlet.http.HttpServletResponse;
-import org.bson.types.ObjectId;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,14 +35,17 @@ public class AdminServiceImpl implements AdminService {
     private final HttpServletResponse response;
     private final CookieService cookieService;
 
-    public AdminServiceImpl(PasswordEncoder passwordEncoder, AdminRepo adminRepo, JwtService jwtService, UserServiceImpl userServiceImpl, AuthenticationManager authenticationManager, HttpServletResponse response, CookieService cookieService, CookieService cookieService1) {
+    public AdminServiceImpl(
+            PasswordEncoder passwordEncoder, AdminRepo adminRepo, JwtService jwtService,
+            UserServiceImpl userServiceImpl, AuthenticationManager authenticationManager,
+            HttpServletResponse response, CookieService cookieService) {
         this.passwordEncoder = passwordEncoder;
         this.adminRepo = adminRepo;
         this.jwtService = jwtService;
         this.userServiceImpl = userServiceImpl;
         this.authenticationManager = authenticationManager;
         this.response = response;
-        this.cookieService = cookieService1;
+        this.cookieService = cookieService;
     }
 
     @Override
@@ -56,14 +58,9 @@ public class AdminServiceImpl implements AdminService {
         try {
             if (adminOptional.isPresent() || userServiceImpl.findUserByEmail() != null)
                 throw new UserAlreadyExistException("Admin " + admin.getEmail() + " already exist!");
-            else throw new UserNotFoundException();
-        } catch (UserNotFoundException e) {
-            try {
-                adminRepo.save(admin);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
+        } catch (UserNotFoundException ignored) {
         }
+        adminRepo.save(admin);
     }
 
     @Override
@@ -72,13 +69,13 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void deleteAdmin(ObjectId id) {
+    public void deleteAdmin(Long id) {
         adminRepo.deleteById(id);
     }
 
     @Override
-    public Admin findAdminById(ObjectId id) {
-        return adminRepo.findById(id).orElseThrow(() -> new UserNotFoundException(id.toHexString()));
+    public Admin findAdminById(Long id) {
+        return adminRepo.findById(id).orElseThrow(() -> new UserNotFoundException(" Id: " + id));
     }
 
     @Override
@@ -99,23 +96,15 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void login(Admin admin) {
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(admin.getEmail(), admin.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(auth);
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        String token = jwtService.generateToken(userDetails.getUserName(), userDetails.getFullName(), userDetails.getId().toHexString(), userDetails.getRole(),
-                userDetails.getUsername());
+        String token = jwtService.generateToken(userDetails.getUserName(), userDetails.getFullName(),
+                userDetails.getId(), userDetails.getRole(), userDetails.getUsername());
         cookieService.addTokenToCookie(response, token);
     }
 
     @Override
     public Admin getAdmin() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            Optional<Admin> adminOptional = adminRepo.findByEmail(auth.getName());
-            if (adminOptional.isEmpty())
-                throw new UserNotFoundException("Admin " + auth.getName() + " does not exist!");
-            return adminOptional.get();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return adminRepo.findByEmail(auth.getName()).orElseThrow(() -> new UserNotFoundException("Admin " + auth.getName() + " does not exist!"));
     }
 }

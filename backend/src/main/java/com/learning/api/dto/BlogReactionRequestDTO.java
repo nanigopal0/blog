@@ -4,13 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class BlogReactionRequestDTO {
-    private ObjectId userId;
-    private ObjectId blogId;
+    private Long userId;
+    private Long blogId;
 }

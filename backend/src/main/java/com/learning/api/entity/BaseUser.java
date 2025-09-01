@@ -1,32 +1,40 @@
 package com.learning.api.entity;
 
-import com.fasterxml.jackson.databind.annotation.EnumNaming;
 import com.learning.api.dto.Role;
-import com.mongodb.lang.NonNull;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
-import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
+
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
+@MappedSuperclass
 public class BaseUser {
     @Id
-    private ObjectId id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
     private String name;
+
     private String photo;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private AuthMode authMode;
-    @NonNull
-    @Indexed(unique = true)
+
+    @Column(nullable = false, unique = true)
     private String username;
-    @NonNull
-    @Indexed(unique = true)
+
+    @Column(nullable = false, unique = true)
     private String email;
+
+//    @Column(nullable = false)
     private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 }

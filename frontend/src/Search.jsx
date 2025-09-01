@@ -1,133 +1,212 @@
 import { useContext, useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import HomeBlogCard from "./components/HomeBlogCard";
-import { handleResponseFromFetchBlog } from "./util/HandleResponse";
-import LoadingIndicator from "./util/LoadingIndicator";
-
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "./contexts/AuthContext";
 import { ConstBlogPageSize } from "./util/ConstBlogPageSize";
 import PaginationRounded from "./components/PaginationRounded";
 import MediaCard from "./components/MediaCard";
-import { Box, CircularProgress, Grid, Typography } from "@mui/material";
+import { SearchIcon } from "lucide-react";
+import apiErrorHandle from "./util/APIErrorHandle";
+import { searchBlogs } from "./util/BlogUtil";
+import { searchUsers } from "./util/UserUtil";
+import LoadingIndicator from "./components/LoadingIndicator";
+import FollowerCard from "./components/FollowerCard";
+import HeaderHomePage from "./components/HeaderHomePage";
+import HeaderFilter from "./components/HeaderFilter";
 
 function Search() {
-  const [searchedBlogs, setSearchedBlogs] = useState([]);
+  const [searchedBlogPage, setSearchedBlogPage] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { logout } = useContext(AuthContext);
-  const [pageNumber, setPageNumber] = useState(1);
+  const { removeCreds } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [keyword, setKeyword] = useState("");
+  const [selectedHeaderIdx, setSelectedHeaderIdx] = useState(0);
+  const headers = ["Blog", "User"];
+  const sortByBlog = ["time", "title"];
+  const [userPage, setUserPage] = useState(null);
+  const [sortBy, setSortBy] = useState("time");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [pageNumber, setPageNumber] = useState(0);
   const [pageSize, setPageSize] = useState(ConstBlogPageSize[0]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
-  const [isLastPage, setIsLastPage] = useState(false);
-  const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const searchKey = queryParams.get("query") || ""; // Get the search key from the URL
 
-  useEffect(() => {
-    fetchSearchedBlogs(pageNumber - 1, pageSize);
-  }, [searchKey]);
-
-  const fetchSearchedBlogs = async (p, pageSize) => {
+  const fetchSearchedBlogs = async (pageNumber, pageSize) => {
     setLoading(true);
-    const fetchedBlogs = await fetchSearchResult(p, pageSize);
-
-    if (fetchedBlogs && fetchedBlogs.content) {
-      setSearchedBlogs(fetchedBlogs.content);
-      setPageNumber(fetchedBlogs.pageNumber + 1);
-      setPageSize(fetchedBlogs.pageSize);
-      setIsLastPage(fetchedBlogs.isLastPage);
-      setTotalPages(fetchedBlogs.totalPages);
-      setTotalElements(fetchedBlogs.totalElements);
+    try {
+      const fetchedBlogPage = await searchBlogs(
+        keyword,
+        pageNumber,
+        pageSize,
+        sortBy,
+        sortOrder
+      );
+      if (fetchedBlogPage.number != pageNumber)
+        setPageNumber(fetchedBlogPage.number);
+      if (fetchedBlogPage.size != pageSize) setPageSize(fetchedBlogPage.size);
+      setSearchedBlogPage(fetchedBlogPage);
+    } catch (error) {
+      apiErrorHandle(error, removeCreds);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const fetchSearchResult = async (pageNumber, pageSize) => {
-    return await fetch(
-      `/api/blog/search?keyword=${searchKey}&pageNumber=${pageNumber}&pageSize=${pageSize}`,
-      {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    )
-      .then((res) => {
-        return handleResponseFromFetchBlog(res, logout); // Parse the text from the response
-      })
-      .catch((error) => {
-        error.response == 404
-          ? console.log("No result found")
-          : console.log("Error fetching blogs:", error);
-        return [];
-      });
+  const fetchUsers = async (pageNumber, pageSize) => {
+    setLoading(true);
+    try {
+      const result = await searchUsers(keyword, pageNumber, pageSize);
+      if (result.number != pageNumber) setPageNumber(result.number);
+      if (result.size != pageSize) setPageSize(result.size);
+      setUserPage(result);
+    } catch (error) {
+      apiErrorHandle(error, removeCreds);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleSearch();
+  }, [sortBy, sortOrder, pageNumber, pageSize, selectedHeaderIdx]);
+
+  const handleSearch = () => {
+    if (keyword.trim()) {
+      if (selectedHeaderIdx == 0)
+        fetchSearchedBlogs(
+          0,
+          (searchedBlogPage && searchedBlogPage.size) || ConstBlogPageSize[0]
+        );
+      else
+        fetchUsers(
+          0,
+          (searchedBlogPage && searchedBlogPage.size) || ConstBlogPageSize[0]
+        );
+    }
   };
 
   return (
-    <Box
-      sx={{
-        padding: 4,
-        backgroundColor: "background.body",
-        minHeight: "100vh",
-      }}
-    >
-     
-        {/* Header Section */}
-        <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 3 }}>
-          Searched Blogs for "{searchKey}"
-        </Typography>
-
-        {/* Blogs Section */}
-        {loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "200px",
-            }}
-          >
-            <CircularProgress />
-          </Box>
-        ) : searchedBlogs.length === 0 ? (
-          <Typography
-            variant="body1"
-            color="textSecondary"
-            sx={{ textAlign: "center" }}
-          >
-            No results found
-          </Typography>
-        ) : (
-          <Grid container spacing={3}>
-            {searchedBlogs.map((element) => (
-              <Grid item xs={12} sm={6} md={4} key={element.id}>
-                <MediaCard blog={element} />
-              </Grid>
-            ))}
-          </Grid>
-        )}
- 
-      {searchedBlogs.length > 0 && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: 4,
-          }}
-        >
-          <PaginationRounded
-            pageNumber={pageNumber}
-            pageSize={pageSize}
-            onChangePage={fetchSearchedBlogs}
-            isLastPage={isLastPage}
-            totalElements={totalElements}
-            totalPages={totalPages}
+    <div className="p-4 flex flex-col gap-6 min-h-screen ">
+      <div className="place-items-center">
+        <div className="flex max-w-md lg:max-w-lg w-full gap-2 justify-between items-center px-4 py-2 border rounded-xl">
+          <input
+            type="text"
+            className="w-full focus:outline-none"
+            placeholder="Search blogs, users"
+            onChange={(e) => setKeyword(e.target.value)}
+            value={keyword}
           />
-        </Box>
-     )} 
-    </Box>
+          <i className="cursor-pointer" onClick={() => handleSearch()}>
+            <SearchIcon />
+          </i>
+        </div>
+      </div>
+      {/* Header Section */}
+
+      <h2 className="text-lg font-medium text-center text-gray-700 dark:text-gray-300 ">
+        Searched {selectedHeaderIdx == 0 ? "blogs" : "users"} for "{keyword}"
+      </h2>
+      <div className="justify-items-center ">
+        <div className="max-w-md lg:max-w-lg w-full ">
+
+          {/* Sorting  */}
+          {selectedHeaderIdx == 0 && (
+            <div className="mb-4">
+              <HeaderFilter
+                onChangeSortBy={(e) => setSortBy(e.target.value)}
+                onChangeSortOrder={(e) => setSortOrder(e.target.value)}
+                sortByItems={sortByBlog}
+                sortByValue={sortBy}
+                sortOrderValue={sortOrder}
+              />
+            </div>
+          )}
+
+          <div className="flex gap-4 overflow-x-auto">
+            {headers.map((header, index) => (
+              <HeaderHomePage
+                key={index}
+                category={header}
+                isSelected={selectedHeaderIdx == index}
+                onClick={() => {
+                  setSelectedHeaderIdx(index);
+                  setPageNumber(0);
+                  setPageSize(ConstBlogPageSize[0]);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Content Section */}
+
+      <div>
+        {loading && <LoadingIndicator />}
+
+        {!loading && selectedHeaderIdx === 0 && (
+          <>
+            {searchedBlogPage ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {searchedBlogPage.content.map((element) => (
+                  <MediaCard key={element.id} blog={element} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-600 dark:text-gray-400 text-base">
+                No blogs found for "{keyword}"
+              </p>
+            )}
+          </>
+        )}
+
+        {!loading && selectedHeaderIdx === 1 && (
+          <>
+            {userPage ? (
+              <div className="flex justify-center items-center gap-4">
+                {userPage.content.map((element) => (
+                  <FollowerCard
+                    key={element.id}
+                    follower={element}
+                    onclick={() => navigate(`/user/${element.id}`)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-600 dark:text-gray-400 text-base">
+                No users found for "{keyword}"
+              </p>
+            )}
+          </>
+        )}
+      </div>
+      {/* Pagination */}
+
+      {!loading && (searchedBlogPage || userPage) && (
+        <div className="flex justify-center items-center ">
+          <PaginationRounded
+            pageNumber={pageNumber + 1}
+            pageSize={pageSize}
+            onChangePage={(pn, ps) => {
+              setPageNumber(pn );
+              setPageSize(ps);
+            }}
+            isLastPage={
+              selectedHeaderIdx == 0
+                ? (searchedBlogPage && searchedBlogPage.last) || false
+                : (userPage && userPage.last) || true
+            }
+            totalElements={
+              selectedHeaderIdx == 0
+                ? (searchedBlogPage && searchedBlogPage.totalElements) || 0
+                : (userPage && userPage.totalElements) || 0
+            }
+            totalPages={
+              selectedHeaderIdx == 0
+                ? (searchedBlogPage && searchedBlogPage.totalPages) || 0
+                : (userPage && userPage.last) || 0
+            }
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

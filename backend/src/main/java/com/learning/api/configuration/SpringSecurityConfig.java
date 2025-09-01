@@ -29,7 +29,6 @@ import java.util.List;
 @EnableWebSecurity
 public class SpringSecurityConfig {
 
-
     private final CustomUserDetailService customUserDetailService;
     private final Oauth2LoginSuccessHandler oauth2LoginHandler;
     private final JwtAuthFilter jwtAuthFilter;
@@ -48,11 +47,13 @@ public class SpringSecurityConfig {
         httpSecurity.
                 cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(registry -> registry.requestMatchers("/public/**", "/admin/login").permitAll()
-                        .requestMatchers("user/get-oauth2").authenticated()
-                        .requestMatchers("/user/**", "/blog/**", "/category/all", "/blog/reaction/").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers("/admin/**", "/category/**").hasRole("ADMIN")
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(registry ->
+                        registry.requestMatchers("/public/**", "/admin/login").permitAll()
+                                .requestMatchers("/user/get-oauth2", "/comment/**", "/blog/reaction/**",
+                                        "/user/**", "/blog/**", "/category/all", "/category/search",
+                                        "follower/**").authenticated()
+                                .requestMatchers("/**").hasRole("ADMIN")
+                                .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))

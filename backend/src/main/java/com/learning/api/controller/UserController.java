@@ -1,17 +1,15 @@
 package com.learning.api.controller;
 
-import com.learning.api.dto.BaseUserDTO;
-import com.learning.api.dto.UserDTO;
-import com.learning.api.entity.User;
+import com.learning.api.dto.*;
 import com.learning.api.service.UserService;
+import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @RestController
@@ -26,73 +24,68 @@ public class UserController {
     }
 
 
-    @GetMapping("get")
-    public ResponseEntity<UserDTO> getUserByEmail() {
-        try {
-            return ResponseEntity.ok(userService.findUserByEmail());
-        } catch (Exception e) {
-            log.error("getUserByEmail: User not found! ${}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    //Get current logged in user
+    @GetMapping("get-current-user")
+    public ResponseEntity<CurrentUserResponseDTO> getUser() {
+        return ResponseEntity.ok(userService.findUserByEmail());
+    }
+
+    @GetMapping("get-by-username")
+    public ResponseEntity<UserDTO> getUserByUsername(@RequestParam String username) {
+        return ResponseEntity.ok(userService.findUserByUsername(username));
+    }
+
+    @GetMapping("get-by-id")
+    public ResponseEntity<UserDTO> getUserById(@RequestParam Long id) {
+        return ResponseEntity.ok(userService.findUserById(id));
     }
 
     @GetMapping("get-all")
-    public ResponseEntity<List<User>> getAllUser() {
-        try {
-            List<User> users = userService.findAllUser();
-            return ResponseEntity.of(Optional.of(users));
-        } catch (Exception e) {
-            log.error("getAllUser: Users not found! ${}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    @RolesAllowed("ADMIN")
+    public ResponseEntity<List<UserDTO>> getAllUser() {
+        return ResponseEntity.ok(userService.findAllUser());
     }
-        @PutMapping("update")
-        public ResponseEntity<User> updateUserEntity (@RequestBody BaseUserDTO dto){
-            try {
-                User updateUser = userService.updateUser(dto);
-                return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(updateUser);
-            } catch (Exception e) {
-                log.error("updateUser: Failed to update user! ${}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
-        }
 
-        @DeleteMapping("delete")
-        public ResponseEntity<Void> deleteUser () {
-            try {
-                userService.deleteUserById();
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-            } catch (Exception e) {
-                log.error("deleteUser: Failed to delete user! ${}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
-        }
-
-        @GetMapping("search")
-        public ResponseEntity<List<User>> searchUser (@RequestParam("name") String search){
-            try {
-                List<User> users = userService.searchUsers(search);
-                return ResponseEntity.ok(users);
-            } catch (Exception e) {
-                log.error("searchUser: User not found! ${}", e.getMessage());
-                return ResponseEntity.notFound().build();
-            }
-        }
-
-        @GetMapping("logout")
-        public ResponseEntity<String> logout () {
-            userService.logout();
-            return ResponseEntity.ok("Logout successful!");
-        }
-
-        @GetMapping("/ping")
-        public ResponseEntity<String> ping () {
-            try {
-                return ResponseEntity.status(HttpStatus.OK).body("Ping successful!");
-            } catch (Exception e) {
-                log.error("ping: User not found! {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-            }
-        }
-
+    @PutMapping("update/profile")
+    public ResponseEntity<CurrentUserResponseDTO> updateUserEntity(@RequestBody UpdateProfile dto) {
+        CurrentUserResponseDTO updateUser = userService.updateUser(dto);
+        return ResponseEntity.ok(updateUser);
     }
+
+    @PutMapping("change/password")
+    public ResponseEntity<String> changeUserPassword(@RequestBody UpdatePasswordDTO dto) {
+        userService.changePassword(dto);
+        return ResponseEntity.ok("Password changed successfully");
+    }
+
+
+    @DeleteMapping("delete")
+    public ResponseEntity<Void> deleteUser() {
+        userService.deleteUserById();
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    @GetMapping("search")
+    public ResponseEntity<Page<UserOverviewDTO>> searchUser(
+            @RequestParam("name") String search,
+            @RequestParam(value = "pageNumber", defaultValue = "0", required = false) int pageNumber,
+            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "name", required = false) String sortBy,
+            @RequestParam(value = "sortDir", defaultValue = "asc", required = false) String sortDir
+    ) {
+
+        return ResponseEntity.ok(userService.searchUsers(search, sortBy, sortDir, pageNumber, pageSize));
+    }
+
+    @GetMapping("logout")
+    public ResponseEntity<String> logout() {
+        userService.logout();
+        return ResponseEntity.ok("Logout successful!");
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.status(HttpStatus.OK).body("Ping successful!");
+    }
+
+}

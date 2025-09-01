@@ -1,16 +1,8 @@
-import { useContext, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Grid,
-  Container,
-  Card,
-  CardContent,
-} from "@mui/material";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "@mui/material/styles";
 import { AuthContext } from "./contexts/AuthContext";
+import Register from "./Register";
+import axios from "axios";
 
 const featureCards = [
   {
@@ -29,26 +21,8 @@ const featureCards = [
 
 export default function LandingPage({ openRegisterDialog }) {
   const navigate = useNavigate();
-  const { isAuthenticated, updateUserInfo } = useContext(AuthContext);
-  const theme = useTheme();
-  // const [loginOpen, setLoginOpen] = useState(false);
-  // const [registerOpen, setRegisterOpen] = useState(false);
-
-  const commonButtonStyles = {
-    textTransform: "none",
-    fontWeight: "bold",
-    px: 4,
-    py: 1.5,
-    fontSize: "1rem",
-  };
-
-  const cardStyles = {
-    textAlign: "center",
-    boxShadow: 3,
-    "&:hover": { boxShadow: 6, transform: "scale(1.05)" },
-    transition: "transform 0.3s ease-in-out",
-    borderRadius: 2,
-  };
+  const { updateUserInfo, logout } = useContext(AuthContext);
+  const [showRegister, setShowRegister] = useState(false);
 
   useEffect(() => {
     const token = extractOAuth2TokenFromUrl();
@@ -65,198 +39,83 @@ export default function LandingPage({ openRegisterDialog }) {
 
   const getUserInfo = async (token) => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `/api//oauth2-success/jwt-token?token=${token}`,
         {
-          method: "GET",
+          withCredentials: true,
           headers: {
             "Content-type": "application/json",
           },
-          credentials: "include",
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        updateUserInfo(data);
+      if (response.status === 200) {
+        updateUserInfo(response.data);
         navigate("/home");
       }
     } catch (error) {
-      console.error("Error fetching user info:", error);
+      if (error.response && error.response.status === 401) {
+        console.log("Unauthorized access - please log in.");
+        logout();
+      } else
+        console.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Error fetching user data"
+        );
     }
   };
 
-  // const handleChangeFromRegisterToLogin = () => {
-  //   setRegisterOpen(false);
-  //   setLoginOpen(true);
-  // };
-
-  // const handleChangeFromLoginToRegister = () => {
-  //   setRegisterOpen(true);
-  //   setLoginOpen(false);
-  // };
-
-  // const handleRegisterClickOpen = () => {
-  //   setRegisterOpen(true);
-  // };
-
-  // const handleRegisterClose = () => {
-  //   setRegisterOpen(false);
-  // };
-  // const handleLoginClose = () => {
-  //   setLoginOpen(false);
-  // };
-
   return (
-    <Box
-      sx={{ backgroundColor: "background.body" }}
-      // sx={{
-      //   background: `linear-gradient(${theme.palette.primary.main}, ${theme.palette.secondary.dark})`,
-      // }}
-    >
-      {/* Hero Section */}
-      {/* <RegisterDialog
-        open={registerOpen}
-        onClose={handleRegisterClose}
-        onChangeLogin={handleChangeFromRegisterToLogin}
-      />
-      <LoginDialog open={loginOpen} onClose={handleLoginClose} onChangeRegister={handleChangeFromLoginToRegister}/> */}
+    <div className="my-8 p-4">
+      {showRegister && <Register onClose={() => setShowRegister(false)} />}
+      <div className="sm:max-w-md lg:max-w-4xl text-center mx-auto p-4">
+        <p className="font-bold text-4xl mb-2">Welcome to Blogify</p>
+        <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
+          Share your thoughts, connect with others, and explore amazing blogs
+          from around the world.
+        </p>
+      </div>
 
-      <Box sx={{ py: 12, textAlign: "center" }}>
-        <Container maxWidth="md">
-          <Typography
-            variant="h2"
-            fontWeight="bold"
-            gutterBottom
-            sx={{ fontSize: { xs: "2.5rem", md: "4rem" } }}
-          >
-            Welcome to Blogify
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{
-              mb: 4,
-              fontSize: { xs: "1rem", md: "1.25rem" },
-              color: "text.primary",
-            }}
-          >
-            Share your thoughts, connect with others, and explore amazing blogs
-            from around the world.
-          </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              ...commonButtonStyles,
-              background: `linear-gradient(135deg, #670678, #d80a77)`,
-              color: "white",
-              "&:hover": {
-                background: `linear-gradient(135deg, #8b0422, #590678)`,
-              },
-            }}
-            onClick={() =>
-              isAuthenticated ? navigate("/home") : openRegisterDialog()
-            }
-          >
-            Get Started
-          </Button>
-        </Container>
-      </Box>
+      <div className="my-8">
+        <p className="text-2xl mb-2 font-bold text-center text-teal-700 dark:text-teal-500">
+          Why Choose Blogify?
+        </p>
+        <p className="text-center text-lg mb-8">
+          Discover the features that make Blogify the best platform for
+          bloggers.
+        </p>
 
-      {/* Features Section */}
-      <Box sx={{ py: 10 }}>
-        <Container>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            align="center"
-            gutterBottom
-            color="secondary"
-            sx={{ fontSize: { xs: "2rem", md: "2.5rem" } }}
-          >
-            Why Choose Blogify?
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            align="center"
-            sx={{
-              mb: 6,
-              color: "secondary",
-              fontSize: { xs: "0.9rem", md: "1.1rem" },
-            }}
-          >
-            Discover the features that make Blogify the best platform for
-            bloggers.
-          </Typography>
-          <Grid container spacing={4} flex={1} justifyContent="center">
-            {featureCards.map((card, index) => (
-              <Grid
-                key={index}
-                sx={{
-                  gridColumn: {
-                    xs: "span 12", // Full width on small screens
-                    sm: "span 6", // Half width on medium screens
-                    md: "span 4", // One-third width on large screens
-                  },
-                }}
-              >
-                <Card sx={cardStyles}>
-                  <CardContent>
-                    <Typography
-                      variant="h5"
-                      fontWeight="bold"
-                      gutterBottom
-                      sx={{ color: theme.palette.primary.light }}
-                    >
-                      {card.title}
-                    </Typography>
-                    <Typography variant="body2" color="primary.text">
-                      {card.description}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </Box>
+        <div className="justify-center sm:grid-cols-1 md:grid-cols-2 mx-auto lg:grid-cols-3 grid gap-8">
+          {featureCards.map((card, index) => (
+            <div
+              key={index}
+              className="text-center border border-black/20 bg-black/20 dark:border-white/10 dark:bg-white/20 rounded-2xl md:mx-auto p-6 hover:scale-105 "
+            >
+              <div>
+                <p className="text-lg font-medium mb-2">{card.title}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {card.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <Box sx={{ py: 8, textAlign: "center" }}>
-        <Container>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            gutterBottom
-            sx={{ fontSize: { xs: "2rem", md: "2.5rem" } }}
-          >
-            Ready to Start Your Blogging Journey?
-          </Typography>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              mb: 4,
-              fontSize: { xs: "0.9rem", md: "1.1rem" },
-              color: "text.primary",
-            }}
-          >
-            Join Blogify today and share your voice with the world.
-          </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              ...commonButtonStyles,
-              background: `linear-gradient(135deg, #56ddbb, #0c8888)`,
-              color: "black",
-              "&:hover": {
-                background: `linear-gradient(135deg, #6ee2b9, #07e3e3)`,
-              },
-            }}
-            onClick={openRegisterDialog}
-          >
-            Sign Up Now
-          </Button>
-        </Container>
-      </Box>
-    </Box>
+      <div className="flex my-8 flex-col items-center">
+        <p className="text-xl mb-2 font-medium">
+          Ready to Start Your Blogging Journey?
+        </p>
+        <p className="text-sm mb-8">
+          Join Blogify today and share your voice with the world.
+        </p>
+        <button
+          className="cursor-pointer hover:bg-violet-500 backdrop-blur-2xl rounded-lg font-medium bg-violet-600 p-3 text-white"
+          onClick={() => setShowRegister(true)}
+        >
+          Get Started
+        </button>
+      </div>
+    </div>
   );
 }

@@ -1,23 +1,29 @@
 package com.learning.api.entity;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bson.types.ObjectId;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@Document(collection = "blog_reaction")
 @AllArgsConstructor
 @NoArgsConstructor
-@CompoundIndex(def = "{'userId': 1, 'blogId': 1}", unique = true)
+@Entity
+@Table(name = "blog_reactions", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "blog_id"}))
 public class BlogReaction {
-    private ObjectId id;
-    private ObjectId userId;  //Which user likes
-    private ObjectId blogId;  //Where the user likes
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;  //Which user does like
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "blog_id", nullable = false)
+    private BlogData blog;  //Where the user likes
 }
 
-//userId and blogId both will not be same in two or more documents
+//userId and blogId both will not be the same in two or more documents

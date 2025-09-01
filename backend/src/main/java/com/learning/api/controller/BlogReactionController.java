@@ -1,14 +1,11 @@
 package com.learning.api.controller;
 
 import com.learning.api.dto.BlogReactionRequestDTO;
+import com.learning.api.dto.BlogReactionResponseDTO;
 import com.learning.api.service.BlogReactionService;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -22,22 +19,12 @@ public class BlogReactionController {
     }
 
     @PostMapping("like")
-    public ResponseEntity<String> like(@RequestBody BlogReactionRequestDTO blogLike) {
-        try {
-            return ResponseEntity.ok().body(blogReactionService.like(blogLike));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
+    public ResponseEntity<BlogReactionResponseDTO> like(@RequestBody BlogReactionRequestDTO blogLike) {
+        return ResponseEntity.ok().body(blogReactionService.like(blogLike));
     }
 
-    @PostMapping("dislike")
-    public ResponseEntity<String> disLike(@RequestBody ObjectId blogReactionId) {
-        try {
-            return ResponseEntity.ok().body(blogReactionService.disLike(blogReactionId));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
+    @DeleteMapping("dislike")
+    public ResponseEntity<BlogReactionResponseDTO> disLike(@RequestParam Long blogReactionId) {
+        return ResponseEntity.ok().body(blogReactionService.disLike(blogReactionId));
     }
 }

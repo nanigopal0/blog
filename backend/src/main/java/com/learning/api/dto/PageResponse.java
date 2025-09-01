@@ -12,10 +12,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PageResponse<T> {
-    long totalElements;
-    int totalPages;
-    List<T> content;
-    int pageNumber;
-    int pageSize;
-    boolean isLastPage;
+    private long totalElements;
+    private int totalPages;
+    private List<T> content;
+    private int pageNumber;
+    private int pageSize;
+    private boolean isLastPage;
 }

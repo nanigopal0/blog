@@ -1,26 +1,13 @@
 import { useState } from "react";
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  TextField,
-  Typography,
-  InputAdornment,
-  IconButton,
-  Alert,
-  LinearProgress,
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import {
-  emailValidate,
-  passwordValidate,
-} from "../util/RegisterInputValidate";
+import { emailValidate, passwordValidate } from "../util/RegisterInputValidate";
+import { Loader, Eye, EyeOff } from "lucide-react";
+import Dialog from "./Dialog";
+import LoadingIndicator from "./LoadingIndicator";
+import axios from "axios";
 
 export default function RegisterDialog({ open, onClose, onChangeLogin }) {
-  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [fullName, setFullName] = useState("");
@@ -40,33 +27,31 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     formJson.name = formJson.fullName;
     delete formJson.fullName; // Remove the fullName key from the object
 
-    serverRegister(formJson)
-      .then((result) => {
-        if (result.status == 201) {
-          setErrorMessage(null);
-          console.log(result);
-          setIsRegisterSuccess(true);
-          timer(time);
-        } else throw new Error("Registration failed. Please try again.");
-      })
-      .catch((error) => {
-        setErrorMessage(error.message || "An unknown error occurred.");
-        console.error("There has been a problem with fetch operation:", error);
-      })
-      .finally(setLoading(false));
+    serverRegister(formJson);
   };
 
   const serverRegister = async (data) => {
-    const result = await fetch(`/api/public/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  
-    if (!result.ok) {
-      throw new Error(await result.text() || "Invalid credentials");
+    try {
+      const result = await axios.post(`/api/public/signup`, data, {
+        withCredentials: true,
+        headers: { "Content-Type": "application/json" },
+      });
+      setErrorMessage(null);
+      console.log(result.data);
+      setIsRegisterSuccess(true);
+      timer(time);
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "An unknown error occurred while register"
+      );
+      console.error(
+        error.response?.data?.message || error.message || "Error Register"
+      );
+    } finally {
+      setLoading(false);
     }
-    return result;
   };
 
   const timer = async (timeOut) => {
@@ -122,189 +107,183 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     onClose(); // Call the parent onClose handler
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog
-      maxWidth="xs"
-      open={open}
-      onClose={handleClose}
-      slotProps={{
-        paper: {
-          component: "form",
-          onSubmit: handleSubmit,
-        },
-      }}
-      sx={{
-        "& .MuiPaper-root": {
-          backgroundColor: "background.body",
-        },
-      }}
-    >
-      <LinearProgress hidden={!loading} />
+    <Dialog isOpen={open} onClose={handleClose} title={"Register to Blogify"}>
+      <div>
+        {loading && <LoadingIndicator />}
 
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isRegisterSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+              Successfully registered! Login to access Blogify. Redirect to
+              Login in {time}s
+            </div>
+          )}
 
-      <DialogTitle>
-        <Typography
-          variant="h6"
-          component="div"
-          align="center"
-          fontWeight="700"
-          sx={{ flexGrow: 1 }}
-        >
-          Sign Up
-        </Typography>
-      </DialogTitle>
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              {errorMessage}
+            </div>
+          )}
 
-      <DialogContent>
-        {isRegisterSuccess && (
-          <Alert severity="success" >
-            Successfully registered! Login to access Blogify. Redirect to Login
-            in {time}s
-          </Alert>
-        )}
-        {errorMessage && (
-          <Alert severity="error" >
-            {errorMessage}
-          </Alert>
-        )}
-        {/* Full Name Input */}
-        <TextField
-          autoFocus
-          required
-          onChange={handleFullNameChange}
-          value={fullName}
-          error={fullName.length < 3 && fullName != ""}
-          size="small"
-          margin="normal"
-          id="fullName"
-          multiline={false}
-          name="fullName"
-          label="Full Name"
-          type="text"
-          variant="outlined"
-          fullWidth
-        />
+          {/* Full Name Input */}
+          <div>
+            <label
+              htmlFor="fullName"
+              className="block text-sm font-medium mb-2"
+            >
+              Full Name
+            </label>
+            <input
+              autoFocus
+              required
+              onChange={handleFullNameChange}
+              value={fullName}
+              id="fullName"
+              name="fullName"
+              type="text"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                fullName.length < 3 && fullName !== ""
+                  ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+              }`}
+              placeholder="Enter your full name"
+            />
+          </div>
 
-        {/* Email Input */}
-        <TextField
-          required
-          onChange={handleEmailChange}
-          value={email}
-          error={!isEmailValid && email != ""}
-          size="small"
-          margin="normal"
-          id="email"
-          name="email"
-          multiline={false}
-          label="Email Address"
-          type="email"
-          variant="outlined"
-          fullWidth
-        />
+          {/* Email Input */}
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
+              Email Address
+            </label>
+            <input
+              required
+              onChange={handleEmailChange}
+              value={email}
+              id="email"
+              name="email"
+              type="email"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                !isEmailValid && email !== ""
+                  ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                  : "border-gray-300"
+              }`}
+              placeholder="Enter your email"
+            />
+          </div>
 
-        {/* Password Input with Eye Icon */}
-        <TextField
-          required
-          size="small"
-          value={password}
-          onChange={handlePasswordChange}
-          error={!isPasswordValid && password != ""}
-          margin="normal"
-          id="password"
-          multiline={false}
-          name="password"
-          label="Password"
-          type={showPassword ? "text" : "password"} // Toggle between text and password
-          variant="outlined"
-          fullWidth
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)} // Toggle visibility
-                    edge="end"
-                    aria-label="toggle password visibility"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+          {/* Password Input with Eye Icon */}
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium mb-1"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <input
+                required
+                value={password}
+                onChange={handlePasswordChange}
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                className={`w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  !isPasswordValid && password !== ""
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300"
+                }`}
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 cursor-pointer right-0 pr-3 flex items-center"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
 
-        {/* Confirm Password Input with Eye Icon */}
-        <TextField
-          required
-          size="small"
-          margin="normal"
-          value={confirmPassword}
-          onChange={handleConfirmPasswordChange}
-          error={password != confirmPassword}
-          id="confirmPassword"
-          name="confirmPassword"
-          multiline={false}
-          label="Confirm Password"
-          type={showConfirmPassword ? "text" : "password"} // Toggle between text and password
-          variant="outlined"
-          fullWidth
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} // Toggle visibility
-                    edge="end"
-                    aria-label="toggle confirm password visibility"
-                  >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
+          {/* Confirm Password Input with Eye Icon */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium  mb-1"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                required
+                value={confirmPassword}
+                onChange={handleConfirmPasswordChange}
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                className={`w-full px-3 py-2 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  password !== confirmPassword && confirmPassword !== ""
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "border-gray-300"
+                }`}
+                placeholder="Confirm your password"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 cursor-pointer pr-3 flex items-center"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Eye className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
 
-        {/* Terms and Conditions */}
-        <DialogContentText
-          align="left"
-          variant="body2"
-          color="text.primary"
-          sx={{ marginTop: 2 }}
-        >
-          By signing up, you agree to our <strong>Terms of Service</strong> and{" "}
-          <strong>Privacy Policy</strong>.
-        </DialogContentText>
-        {/* Register Button */}
-        <Button
-          type="submit"
-          variant="contained"
-          sx={{ marginTop: 4 }}
-          fullWidth
-          aria-label="Register"
-          disabled={
-            !isEmailValid ||
-            !isPasswordValid ||
-            confirmPassword !== password ||
-            loading
-          }
-        >
-          Register
-        </Button>
+          {/* Terms and Conditions */}
+          <p className="text-sm text-gray-700 dark:text-gray-400 mt-4">
+            By signing up, you agree to our{" "}
+            <span className="font-semibold">Terms of Service</span> and{" "}
+            <span className="font-semibold">Privacy Policy</span>.
+          </p>
 
-        {/* Login Section */}
-        <Typography sx={{ marginTop: 2, marginBottom: 4 }} align="center">
-          Already have an account?{" "}
-          <Button
-            sx={{ textTransform: "none", fontWeight: "600", color: "primary.main" }}
-            onClick={onChangeLogin}
-            variant="text"
-            aria-label="Login"
+          {/* Register Button */}
+          <button
+            type="submit"
+            disabled={
+              !isEmailValid ||
+              !isPasswordValid ||
+              confirmPassword !== password ||
+              loading
+            }
+            className="w-full bg-purple-600  py-2 px-4 rounded-md hover:bg-purple-700 
+            focus:outline-none focus:ring-2 focus:purple-500 focus:ring-offset-2 text-white
+            disabled:opacity-30 disabled:cursor-not-allowed transition-colors mt-6 cursor-pointer"
           >
-            Login
-          </Button>
-        </Typography>
-      </DialogContent>
+            Register
+          </button>
+
+          {/* Login Section */}
+          <p className="text-center text-sm text-gray-700 dark:text-gray-400 mt-4 mb-0">
+            Already have an account?{" "}
+            <button
+              type="button"
+              onClick={onChangeLogin}
+              className="dark:text-blue-400 text-violet-500 cursor-pointer hover:text-violet-600 font-semibold focus:outline-none focus:underline"
+            >
+              Login
+            </button>
+          </p>
+        </form>
+      </div>
     </Dialog>
   );
 }

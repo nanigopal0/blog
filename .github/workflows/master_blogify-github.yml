@@ -28,8 +28,11 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file backend/pom.xml
         env:
-          MONGODB_URL: ${{secrets.MONGODB_URL}}
-          MONGODB_NAME: ${{secrets.MONGODB_NAME}}
+          # MONGODB_URL: ${{secrets.MONGODB_URL}}
+          # MONGODB_NAME: ${{secrets.MONGODB_NAME}}
+          MYSQL_URL: ${{secrets.MYSQL_URL}}
+          MYSQL_USERNAME: ${{secrets.MYSQL_USERNAME}}
+          MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
           GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
           GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
 

@@ -4,7 +4,7 @@ import com.learning.api.dto.CategoryDTO;
 import com.learning.api.entity.Category;
 import com.learning.api.repositories.CategoryRepo;
 import com.learning.api.service.CategoryService;
-import org.bson.types.ObjectId;
+import com.learning.api.util.EntityToDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +14,11 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepo categoryRepo;
+    private final EntityToDTO entityToDTO;
 
-    public CategoryServiceImpl(CategoryRepo categoryRepo) {
+    public CategoryServiceImpl(CategoryRepo categoryRepo, EntityToDTO entityToDTO) {
         this.categoryRepo = categoryRepo;
+        this.entityToDTO = entityToDTO;
     }
 
     @Transactional
@@ -27,6 +29,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    public List<CategoryDTO> searchCategory(String categoryName) {
+        return categoryRepo.findCategoriesByCategoryStartsWith(categoryName);
+    }
+
+    @Override
     public String addCategory(Category category) {
         categoryRepo.save(category);
         return category + " added successfully!";
@@ -34,22 +41,18 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public List<CategoryDTO> getAllCategories() {
-        return categoryRepo.findAll().stream().map((category) ->
-                CategoryDTO.builder()
-                        .id(category.getId().toHexString())
-                        .category(category.getCategory())
-                        .build()).toList();
+        return categoryRepo.findAllBy();
     }
 
     @Override
-    public String deleteCategory(ObjectId categoryID) {
+    public String deleteCategory(Long categoryID) {
         Category category = categoryRepo.findById(categoryID).orElseThrow();
         categoryRepo.deleteById(category.getId());
         return categoryID + " deleted successfully!";
     }
 
     @Override
-    public String updateCategory(ObjectId categoryID, String category) {
+    public String updateCategory(Long categoryID, String category) {
         Category categoryDB = categoryRepo.findById(categoryID).orElseThrow();
         categoryDB.setCategory(category);
         categoryRepo.save(categoryDB);

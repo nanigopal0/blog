@@ -1,7 +1,6 @@
 package com.learning.api.service;
 
 import com.learning.api.entity.Admin;
-import org.bson.types.ObjectId;
 
 import java.util.List;
 
@@ -11,9 +10,9 @@ public interface AdminService {
 
     String updateAdmin(Admin admin);
 
-    void deleteAdmin(ObjectId id);
+    void deleteAdmin(Long id);
 
-    Admin findAdminById(ObjectId id);
+    Admin findAdminById(Long id);
 
     Admin findAdminByUsername(String username);
 

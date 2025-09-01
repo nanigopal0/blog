@@ -2,7 +2,6 @@ package com.learning.api.service;
 
 import com.learning.api.dto.CategoryDTO;
 import com.learning.api.entity.Category;
-import org.bson.types.ObjectId;
 
 import java.util.List;
 
@@ -11,9 +10,11 @@ public interface CategoryService {
 
     List<CategoryDTO> getAllCategories();
 
-    String deleteCategory(ObjectId categoryID);
+    String deleteCategory(Long categoryID);
 
-    String updateCategory(ObjectId categoryID, String category);
+    String updateCategory(Long categoryID, String category);
 
     String addCategories(List<Category> categories);
+
+    List<CategoryDTO> searchCategory(String categoryName);
 }

@@ -1,7 +1,7 @@
 package com.learning.api.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.learning.api.dto.BaseUserDTO;
+import com.learning.api.dto.UserRegisterRequestDTO;
 import com.learning.api.entity.AuthMode;
 import com.learning.api.exception.UserAlreadyExistException;
 import com.learning.api.service.UserService;
@@ -41,10 +41,9 @@ public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String picture = principal.getAttribute("picture");
         String email = principal.getAttribute("email");
         assert email != null;
-        BaseUserDTO user = BaseUserDTO.builder()
-                .name(name)
-                .photo(picture)
-                .build();
+        UserRegisterRequestDTO user = new UserRegisterRequestDTO();
+        user.setPhoto(picture);
+        user.setName(name);
         user.setEmail(email);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
@@ -59,11 +58,12 @@ public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     URLEncoder.encode("Error: " + e.getMessage(), StandardCharsets.UTF_8)
             );
             response.sendRedirect(redirectUrl);
+            return;
         }
 
         /**
-         * Generate a temporary token with encoded email id and short duration(15s). This should be immediately
-         * passed in the request body to get a jwt token.
+         * Generate a temporary token with encoded email id and short duration(15s). This should immediately
+         * pass in the request body to get a jwt token.
          **/
         Map<String, String> data = new HashMap<>();
         data.put("email", email);

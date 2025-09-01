@@ -1,187 +1,91 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import ReactQuill, { Quill } from "react-quill";
+import { useContext, useEffect, useRef, useState } from "react";
 import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
-import { handleResponseFromFetchBlog } from "./util/HandleResponse";
 import { uploadImage } from "./util/UploadImageCloudinary";
-import LoadingIndicator from "./util/LoadingIndicator";
-
-import {
-  Box,
-  Button,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-  Typography,
-} from "@mui/material";
 import { AuthContext } from "./contexts/AuthContext";
+import { SimpleEditor } from "./components/tiptap-templates/simple/simple-editor";
+import PreviewPost from "./components/PreviewPost";
+import LoadingIndicator from "./components/LoadingIndicator";
+import { getCategoriesFromServer } from "./util/LoadCategory";
+import apiErrorHandle from "./util/APIErrorHandle";
+import { getBlogById, updateBlogById } from "./util/BlogUtil";
+import toast from "react-hot-toast";
 
 function EditBlog() {
   const [image, setImage] = useState(null);
   const [previewImage, setPreviewImage] = useState("");
   const [blogTitle, setBlogTitle] = useState("");
   const coverImageInputRef = useRef(null);
-  const [value, setValue] = useState("");
-  const [images, setImages] = useState([]);
-  const quillRef = useRef(null);
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState([]);
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategoryIdx, setSelectedCategoryIdx] = useState(0);
+  const [categories, setCategories] = useState([
+    { id: 0, category: "Choose a category" },
+  ]);
+  const { logout, removeCreds } = useContext(AuthContext);
   const [blog, setBlog] = useState({});
   const param = useParams();
+  const [editor, setEditor] = useState(null);
+  const [previewPost, setPreviewPost] = useState(false);
 
   useEffect(() => {
-    if (quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      editor.root.style.minHeight = "24rem";
-      editor.root.style.resize = "vertical";
-      editor.root.style.overflow = "auto";
-    }
-    getCategoriesFromServer();
-    
-  }, []);
+    fetchCategories();
+    fetchBlog();
+  }, [param.id]);
 
-  const getCategoriesFromServer = async () => {
+  useEffect(() => {
+    setCategoryIndex(blog?.category?.id);
+  }, [categories, blog]);
+
+  const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/category/all`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        logout();
-      }
-      const data = await response.json();
-      setCategories(data);
-      fetchBlog(data);
+      const cats = await getCategoriesFromServer({ logout });
+      setCategories([{ id: 0, category: "Choose a category" }, ...cats]);
     } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const findCategoryIndex = (category,categories) => {
-    const idx = categories.findIndex((cat) => cat.category === category);
-    return idx !== -1 ? idx : '';
-  };
-
-  const fetchBlog = async (categories) => {
-    try {
-      const result = await fetch(`/api/blog/get-blog/${param.id}`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const resultData = await handleResponseFromFetchBlog(result, logout); 
-      setBlog(resultData);
-      setImage(resultData.coverImage);
-      setPreviewImage(resultData.coverImage);
-      setBlogTitle(resultData.title);
-      const idx =findCategoryIndex(resultData.category.category,categories);
-      // console.log("category index",idx,categories);
-      setSelectedCategory(idx);
-      setValue(resultData.content);
-      // const quillInstance = quillRef.current.getEditor();
-      // quillInstance.setContents(
-      //   quillInstance.clipboard.convert(resultData.content)
-      // );
-    } catch (error) {
-      console.error("There has been a problem with fetch operation:", error);
+      apiErrorHandle(error, removeCreds);
     } finally {
-      setLoading(false);
-     
+      if (blog) setLoading(false);
     }
   };
 
-  const imageHandler = useCallback(() => {
-    const input = document.createElement("input");
-    input.setAttribute("type", "file");
-    input.setAttribute("accept", "image/*");
-    input.click();
+  const setCategoryIndex = (categoryId) => {
+    const idx = categories.findIndex((cat) => cat.id == categoryId);
+    setSelectedCategoryIdx(idx);
+  };
 
-    input.onchange = async () => {
-      const file = input.files[0];
-      if (!file) return;
-      const objectURL = URL.createObjectURL(file);
-      setImages((prevImages) => [...prevImages, { file, objectURL }]);
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection(true);
-      const Image = Quill.import("formats/image");
-      Image.sanitize = () => objectURL; // You can modify the URL here
-      editor.insertEmbed(range.index, "image", objectURL);
-    };
-  }, []);
-
-  const customReactQuillModule = useMemo(
-    () => ({
-      toolbar: {
-        container: [
-          ["bold", "italic", "underline", "strike"],
-          ["blockquote", "code-block"],
-          [{ list: "ordered" }, { list: "bullet" }, { list: "check" }],
-          [{ script: "sub" }, { script: "super" }],
-          [{ indent: "-1" }, { indent: "+1" }],
-          [{ header: [1, 2, 3, 4, 5, 6, false] }],
-          [{ color: [] }, { background: [] }],
-          [{ font: [] }],
-          [{ align: [] }],
-          ["link", "image", "formula"],
-          ["clean"],
-        ],
-        handlers: {
-          image: imageHandler,
-        },
-      },
-    }),
-    [imageHandler]
-  );
+  const fetchBlog = async () => {
+    setLoading(true);
+    try {
+      const result = await getBlogById(param.id);
+      setBlog(result);
+      setImage(result.coverImage);
+      setPreviewImage(result.coverImage);
+      setBlogTitle(result.title);
+    } catch (error) {
+      apiErrorHandle(error, removeCreds);
+    } finally {
+      if (categories.length > 1) setLoading(false);
+    }
+  };
 
   const handleEditBlogBtn = async () => {
-    let content = value;
+    if (selectedCategoryIdx == 0) {
+      alert("Please select a category");
+      return;
+    }
+    setLoading(true);
     const coverImageUrl =
       image === blog.coverImage ? image : await uploadImage(image);
-    const uploadPromises = images.map(async (element) => {
-      const url = await uploadImage(element.file);
-      return {
-        oldUrl: element.objectURL,
-        newUrl: url,
-      };
-    });
 
     try {
-      // Wait for all image uploads to complete
-      const uploadedImages = await Promise.all(uploadPromises);
-      uploadedImages.forEach(({ oldUrl, newUrl }) => {
-        content = content.replace(oldUrl, newUrl);
-      });
-
       const data = {
         id: blog.id,
         coverImage: coverImageUrl,
         title: blogTitle,
-        content: content,
+        content: JSON.stringify(editor.getJSON()),
       };
       if (data.content && data.coverImage && data.title) updateBlogInDB(data);
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
     } finally {
       setLoading(false);
     }
@@ -189,21 +93,11 @@ function EditBlog() {
 
   const updateBlogInDB = async (data) => {
     try {
-      const response = await fetch(`/api/blog/update/${blog.id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if(response.status === 401) logout();
+      const response = await updateBlogById(data);
+      toast.success(response);
       navigate("/home");
     } catch (error) {
-      console.error("There has been a problem with fetch operation:", error);
-    } finally {
-      setLoading(false);
+      apiErrorHandle(error, removeCreds);
     }
   };
 
@@ -211,135 +105,133 @@ function EditBlog() {
     coverImageInputRef.current.click();
   };
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <CircularProgress />
-      </div>
-    );
+  if (loading) return <LoadingIndicator />;
   else
     return (
-      <Box
-        sx={{
-          m: 4,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
+      <div className="m-4 flex flex-col items-center min-h-screen">
+        {previewPost && (
+          <PreviewPost
+            onClose={() => setPreviewPost(false)}
+            jsonPost={editor.getJSON()}
+          />
+        )}
         {/* Cover Image Input */}
-        <Box
+        <div
           onClick={handleCoverImageClick}
-          sx={{
-            height: "18rem",
-            width: "80%",
-            // Using same width as your current code (w-4/5 md:w-1/2).
-            maxWidth: { xs: "80%", md: "50%" },
-            mb: 4,
-            border: "1px solid gray",
-            borderRadius: 2,
-            overflow: "hidden",
-            cursor: "pointer",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+          className="h-72 w-4/5 md:w-1/2 mb-4 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden cursor-pointer flex justify-center items-center hover:border-gray-400 transition-colors"
         >
           {previewImage ? (
-            <Box
-              component="img"
+            <img
               src={previewImage}
               alt="Cover"
-              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+              className="w-full h-full object-contain"
             />
           ) : (
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            <p className="font-medium text-gray-600 dark:text-gray-400">
               Click to choose a cover image
-            </Typography>
+            </p>
           )}
           <input
             type="file"
             ref={coverImageInputRef}
-            style={{ display: "none" }}
+            className="hidden"
+            accept="image/*"
             onChange={(e) => {
               setImage(e.target.files[0]);
               setPreviewImage(URL.createObjectURL(e.target.files[0]));
             }}
           />
-        </Box>
+        </div>
 
-        <Box sx={{ width: "80%", maxWidth: { xs: "80%", md: "66%" }, mb: 4 }}>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel id="category-label">Select a category</InputLabel>
-            <Select
-              labelId="category-label"
-              value={selectedCategory}
-              label="Select a category"
-              onChange={(e) => setSelectedCategory(e.target.value)}
+        <div className="w-4/5 md:w-2/3 mb-4">
+          {/* Category Select */}
+          <div className="mb-3">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Select a category
+            </label>
+            <select
+              id="category"
+              value={selectedCategoryIdx}
+              onChange={(e) => setSelectedCategoryIdx(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             >
               {categories.map((category, index) => (
-                <MenuItem key={index} value={index}>
+                <option key={category.id} value={index}>
                   {category.category}
-                </MenuItem>
+                </option>
               ))}
-            </Select>
-          </FormControl>
+            </select>
+          </div>
 
-          <TextField
-            fullWidth
-            value={blogTitle}
-            onChange={(e) => setBlogTitle(e.target.value)}
-            label="Title"
-            placeholder="Enter title"
-            variant="outlined"
-            multiline
-            sx={{ mb: 3 }}
-          />
-        </Box>
+          {/* Title Input */}
+          <div className="mb-3">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Title
+            </label>
+            <textarea
+              id="title"
+              value={blogTitle}
+              onChange={(e) => setBlogTitle(e.target.value)}
+              placeholder="Enter title"
+              rows="2"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-vertical"
+            />
+          </div>
+        </div>
 
-        <Box sx={{ width: "100%", maxWidth: { xs: "80%", md: "66%" }, mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
+        <div className="w-full md:w-2/3 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Content
-          </Typography>
-          <ReactQuill
-            ref={quillRef}
-            className="resize overflow-auto min-h-96 max-h-screen max-w-6xl min-w-96"
-            theme="snow"
-            value={value}
-            onChange={setValue}
-            placeholder="Start typing..."
-            modules={customReactQuillModule}
-            style={{ minHeight: "24rem" }}
-          />
-        </Box>
+          </h3>
 
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ my: 2, width: "50%" }} // same width as before
-          onClick={() => {
-            if (blogTitle && image && value && value !== "<p><br></p>") {
-              setLoading(true);
-              handleEditBlogBtn();
-            } else {
-              console.log("Invalid input");
-            }
-          }}
-        >
-          Update Blog
-        </Button>
+          {blog && blog.content && (
+            <SimpleEditor
+              onActivate={setEditor}
+              initialContent={JSON.parse(blog.content)}
+            />
+          )}
+        </div>
 
-        <Button
-          variant="contained"
-          color="error"
-          sx={{ my: 2, width: "50%" }} // same width as before
-          onClick={() => {
-            navigate(-1);
-          }}
-        >
-          Cancel
-        </Button>
-      </Box>
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4 w-1/2">
+          <button
+            className="p-2 bg-green-600 text-white rounded-lg"
+            onClick={() => setPreviewPost(true)}
+          >
+            Preview
+          </button>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4
+             rounded-md transition-colors"
+            onClick={() => {
+              if (blogTitle && image) {
+                setLoading(true);
+                handleEditBlogBtn();
+              } else {
+                console.log("Invalid input");
+              }
+            }}
+            disabled={loading}
+          >
+            {loading ? "Updating..." : "Update Blog"}
+          </button>
+
+          <button
+            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+            onClick={() => {
+              navigate(-1);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     );
 }
 
