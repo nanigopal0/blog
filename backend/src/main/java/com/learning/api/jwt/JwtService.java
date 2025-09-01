@@ -6,14 +6,25 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.*;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class JwtService {
 
-    private static final String SECRET = UUID.randomUUID().toString();
+    private static final String SECRET = generateRandom();
     private static final long VALIDITY = 24 * 60 * 60 * 1000;
+
+    public static String generateRandom() {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];
+        random.nextBytes(bytes);
+        return Base64.getEncoder().encodeToString(bytes);
+    }
 
     public String generateToken(String username, String name, Long id, String role, String email) {
         Map<String, String> claims = new HashMap<>();
