@@ -66,7 +66,7 @@ function Dashboard() {
             myBlogPage.content.map((blog) => (
               <MediaCard key={blog.blogId} blog={blog} />
             ))}
-          {loading && <LoadingIndicator />}
+          {loading && <LoadingIndicator size={40}/>}
         </div>
 
         {(!myBlogPage || myBlogPage.empty) && !loading && (

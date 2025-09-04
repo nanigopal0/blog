@@ -19,17 +19,17 @@ const featureCards = [
   },
 ];
 
-export default function LandingPage({ openRegisterDialog }) {
+export default function LandingPage() {
   const navigate = useNavigate();
   const { updateUserInfo, logout } = useContext(AuthContext);
   const [showRegister, setShowRegister] = useState(false);
 
-  useEffect(() => {
-    const token = extractOAuth2TokenFromUrl();
-    if (token) {
-      getUserInfo(token);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const token = extractOAuth2TokenFromUrl();
+  //   if (token) {
+  //     getUserInfo(token);
+  //   }
+  // }, []);
 
   // Function to extract OAuth2 temporary token from URL
   const extractOAuth2TokenFromUrl = () => {

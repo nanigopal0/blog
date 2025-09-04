@@ -71,13 +71,18 @@ function EditBlog() {
 
   const handleEditBlogBtn = async () => {
     if (selectedCategoryIdx == 0) {
-      alert("Please select a category");
+      toast.error("Please select a category");
       return;
     }
-    setLoading(true);
+
+    if (!blogTitle || !image) {
+      toast.error("Title and Cover Image are required");
+      return;
+    }
+    const loadingId = toast.loading("Updating blog...");
+
     const coverImageUrl =
       image === blog.coverImage ? image : await uploadImage(image);
-
     try {
       const data = {
         id: blog.id,
@@ -85,19 +90,15 @@ function EditBlog() {
         title: blogTitle,
         content: JSON.stringify(editor.getJSON()),
       };
-      if (data.content && data.coverImage && data.title) updateBlogInDB(data);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateBlogInDB = async (data) => {
-    try {
-      const response = await updateBlogById(data);
-      toast.success(response);
-      navigate("/home");
+      if (data.content && data.coverImage && data.title) {
+        const response = await updateBlogById(data);
+        toast.success(response);
+        navigate("/home");
+      }
     } catch (error) {
       apiErrorHandle(error, removeCreds);
+    } finally {
+      toast.dismiss(loadingId);
     }
   };
 
@@ -105,10 +106,15 @@ function EditBlog() {
     coverImageInputRef.current.click();
   };
 
-  if (loading) return <LoadingIndicator />;
+  if (loading)
+    return (
+      <div className="w-full h-screen flex justify-center items-center">
+        <LoadingIndicator size={40} />
+      </div>
+    );
   else
     return (
-      <div className="m-4 flex flex-col items-center min-h-screen">
+      <div className="m-4 flex flex-col items-center min-h-screen ">
         {previewPost && (
           <PreviewPost
             onClose={() => setPreviewPost(false)}
@@ -209,14 +215,7 @@ function EditBlog() {
           <button
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4
              rounded-md transition-colors"
-            onClick={() => {
-              if (blogTitle && image) {
-                setLoading(true);
-                handleEditBlogBtn();
-              } else {
-                console.log("Invalid input");
-              }
-            }}
+            onClick={ handleEditBlogBtn}
             disabled={loading}
           >
             {loading ? "Updating..." : "Update Blog"}

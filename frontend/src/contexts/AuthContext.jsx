@@ -6,7 +6,6 @@ import apiErrorHandle from "@/util/APIErrorHandle";
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userInfo, setUserInfo] = useState({});
 
@@ -45,7 +44,6 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-
   const login = async () => {
     const isValidToken = await ping();
     if (isValidToken) {
@@ -55,7 +53,7 @@ export const AuthProvider = ({ children }) => {
         setUserInfo(JSON.parse(atob(user)));
       }
     } else {
-      logout();
+      removeCreds();
     }
   };
 

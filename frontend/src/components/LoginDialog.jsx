@@ -93,10 +93,10 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
       <div className="p-4">
         {loading && <LoadingIndicator />}
 
-        <div className="flex items-center justify-center mb-4 text-yellow-600">
+        {/* <div className="flex items-center justify-center mb-4 text-yellow-600">
           <AlertCircle size={16} className="mr-2" />
           <span className="text-sm">Enable Cookie to use this application</span>
-        </div>
+        </div> */}
 
         <form onSubmit={handleSubmit}>
           {errorMessage && (

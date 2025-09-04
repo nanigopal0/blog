@@ -3,7 +3,10 @@ import { createContext, useState, useEffect } from "react";
 export const ThemeContext = createContext();
 
 export const ThemeContextProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(localStorage.theme === "dark");
+  const [darkMode, setDarkMode] = useState(
+    localStorage.theme === "dark" ||
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
 
   useEffect(() => {
     toggleHtmlTheme();
@@ -16,13 +19,9 @@ export const ThemeContextProvider = ({ children }) => {
 
   const toggleHtmlTheme = () => {
     if (!localStorage.getItem("theme")) {
-      document.documentElement.classList.toggle(
-        "dark",
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-      );
-    } else {
-      document.documentElement.classList.toggle("dark", darkMode);
+      localStorage.setItem("theme", darkMode ? "dark" : "light");
     }
+    document.documentElement.classList.toggle("dark", darkMode);
   };
 
   return (

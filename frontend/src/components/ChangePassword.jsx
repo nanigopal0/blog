@@ -16,6 +16,7 @@ export default function ChangePassword() {
       toast.error("Passwords do not match");
     else {
       setLoading(true);
+      const loadingId = toast.loading("Changing password...");
       try {
         const data = {
           oldPassword: currentPassword,
@@ -26,6 +27,7 @@ export default function ChangePassword() {
       } catch (error) {
         apiErrorHandle(error, removeCreds);
       } finally {
+        toast.dismiss(loadingId);
         setLoading(false);
       }
     }

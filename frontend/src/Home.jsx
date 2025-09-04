@@ -40,7 +40,7 @@ function Home() {
     } catch (error) {
       apiErrorHandle(error, removeCreds);
     } finally {
-      setLoading(false);
+      if (blogPage) setLoading(false);
     }
   };
 
@@ -49,7 +49,7 @@ function Home() {
     try {
       const fetchedBlogs =
         selectedCategoryId == 0
-          ? await getAllBlogs(pageNumber, pageSize,sortBy,sortOrder)
+          ? await getAllBlogs(pageNumber, pageSize, sortBy, sortOrder)
           : await getBlogsByCategory(
               findCategoryById(selectedCategoryId).id,
               pageNumber,
@@ -103,27 +103,29 @@ function Home() {
         ))}
       </div>
 
-<div className="max-w-lg mx-auto">
-
-      <HeaderFilter
-        onChangeSortBy={(e) => setSortBy(e.target.value)}
-        onChangeSortOrder={(e) => setSortOrder(e.target.value)}
-        sortByItems={sortByItems}
-        sortByValue={sortBy}
-        sortOrderValue={sortOrder}
+      <div className="max-w-lg mx-auto">
+        <HeaderFilter
+          onChangeSortBy={(e) => setSortBy(e.target.value)}
+          onChangeSortOrder={(e) => setSortOrder(e.target.value)}
+          sortByItems={sortByItems}
+          sortByValue={sortBy}
+          sortOrderValue={sortOrder}
         />
-        </div>
+      </div>
 
       {/* Blog Cards */}
       {loading ? (
-        <LoadingIndicator />
+        <div className="mt-10">
+          <LoadingIndicator size={40}/>
+        </div>
       ) : !blogPage || blogPage.empty ? (
         <p className="text-center text-lg mt-10 text-gray-600 dark:text-gray-400">
           No blogs available
         </p>
       ) : (
         <div className="my-4 p-2 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {blogPage && blogPage.content &&
+          {blogPage &&
+            blogPage.content &&
             blogPage.content.map((blog) => (
               <MediaCard key={blog.id} blog={blog} />
             ))}

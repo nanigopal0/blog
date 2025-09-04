@@ -16,8 +16,9 @@ export default function UpdateProfile({ email, name, photo }) {
   const profileImageInputRef = useRef(null);
 
   const handleUpdateProfile = async () => {
+    const loadingId = toast.loading("Updating profile...");
+    setLoading(true);
     try {
-      setLoading(true);
       let profileImageUrl = photo;
       if (imageFile) {
         profileImageUrl = await uploadImage(imageFile);
@@ -34,6 +35,7 @@ export default function UpdateProfile({ email, name, photo }) {
       apiErrorHandle(error, removeCreds);
     } finally {
       setLoading(false);
+      toast.dismiss(loadingId);
     }
   };
 

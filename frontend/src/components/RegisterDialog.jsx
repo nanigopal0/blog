@@ -4,6 +4,7 @@ import { Loader, Eye, EyeOff } from "lucide-react";
 import Dialog from "./Dialog";
 import LoadingIndicator from "./LoadingIndicator";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function RegisterDialog({ open, onClose, onChangeLogin }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -33,11 +34,10 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
   const serverRegister = async (data) => {
     try {
       const result = await axios.post(`/api/public/signup`, data, {
-        withCredentials: true,
         headers: { "Content-Type": "application/json" },
       });
       setErrorMessage(null);
-      console.log(result.data);
+      toast.success(result.data);
       setIsRegisterSuccess(true);
       timer(time);
     } catch (error) {
@@ -46,7 +46,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
           error.message ||
           "An unknown error occurred while register"
       );
-      console.error(
+      toast.error(
         error.response?.data?.message || error.message || "Error Register"
       );
     } finally {

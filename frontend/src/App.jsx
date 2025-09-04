@@ -5,7 +5,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import LoadingIndicator from "./components/LoadingIndicator";
 import UserDetails from "./UserDetails";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import apiErrorHandle from "./util/APIErrorHandle";
 
 const LandingPage = React.lazy(() => import("./LandingPage"));
@@ -20,14 +20,15 @@ const Settings = React.lazy(() => import("./Settings"));
 const About = React.lazy(() => import("./About"));
 
 function App() {
-  const { isAuthenticated,removeCreds, updateUserInfo } = useContext(AuthContext);
+  const { isAuthenticated, removeCreds, updateUserInfo } =
+    useContext(AuthContext);
 
   useEffect(() => {
     try {
       const token = extractOAuth2TokenFromUrl();
       if (token) getUserInfo(token);
     } catch (error) {
-      console.error("OAuth2 Error:", error);
+      toast.error("OAuth2 Error:", error);
     }
   }, []);
 
@@ -60,16 +61,16 @@ function App() {
         window.location.href = "/home"; // Redirect to home after successful login
       }
     } catch (error) {
-      apiErrorHandle(error,removeCreds)
+      apiErrorHandle(error, removeCreds);
     }
   };
 
   return (
     <div className="bg-blue-100 dark:bg-gray-900 dark:text-white">
-      <Toaster position="top-right"/>
+      <Toaster position="top-right" />
       <BrowserRouter>
+        <NavBar />
         <Suspense fallback={<LoadingIndicator />}>
-          <NavBar />
           <Routes>
             <Route path="/about" element={<About />} />
             {/* /* Protected Routes */}
@@ -78,7 +79,6 @@ function App() {
                 <Route path="/*" element={<Home />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/settings" element={<Settings />} />
                 <Route path="/create-blog" element={<CreateBlog />} />
                 <Route path="/blog/:id" element={<BlogReader />} />
                 <Route path="/edit-blog/:id" element={<EditBlog />} />
@@ -90,12 +90,11 @@ function App() {
               <>
                 {/* Public Routes */}
                 <Route path="/*" element={<LandingPage />} />
-                <Route path="/blog/:id" element={<BlogReader />} />
               </>
             )}
           </Routes>
-          <Footer />
         </Suspense>
+        <Footer />
       </BrowserRouter>
     </div>
   );

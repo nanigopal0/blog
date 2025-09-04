@@ -13,6 +13,7 @@ export default function ChangeEmail({ email }) {
 
   const handleVerifyClick = async () => {
     setLoading(true);
+    const loadingId = toast.loading("Verifying...");
     try {
       const result = await updateUser({ email: updatedEmail });
       updateUserInfo(result);
@@ -20,6 +21,7 @@ export default function ChangeEmail({ email }) {
     } catch (error) {
       apiErrorHandle(error, removeCreds);
     } finally {
+      toast.dismiss(loadingId);
       setLoading(false);
     }
   };
