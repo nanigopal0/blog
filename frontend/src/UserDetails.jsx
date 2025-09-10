@@ -109,7 +109,7 @@ export default function UserDetails() {
     
   else
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen ">
         {/* Mobile: Stack vertically, Desktop: Side by side */}
         <div className="p-4 lg:p-8 flex flex-col lg:flex-row justify-center lg:justify-around gap-4 sm:gap-6 lg:gap-8">
           {/* User Profile Section */}

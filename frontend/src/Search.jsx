@@ -105,7 +105,6 @@ function Search() {
       </h2>
       <div className="justify-items-center ">
         <div className="max-w-md lg:max-w-lg w-full ">
-
           {/* Sorting  */}
           {selectedHeaderIdx == 0 && (
             <div className="mb-4">
@@ -160,7 +159,7 @@ function Search() {
         {!loading && selectedHeaderIdx === 1 && (
           <>
             {userPage ? (
-              <div className="flex justify-center items-center gap-4">
+              <div className="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 min-[425px]:grid-cols-2 gap-4">
                 {userPage.content.map((element) => (
                   <FollowerCard
                     key={element.id}
@@ -185,7 +184,7 @@ function Search() {
             pageNumber={pageNumber + 1}
             pageSize={pageSize}
             onChangePage={(pn, ps) => {
-              setPageNumber(pn );
+              setPageNumber(pn);
               setPageSize(ps);
             }}
             isLastPage={

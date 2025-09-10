@@ -70,7 +70,7 @@ function Profile() {
           <div className="w-full max-w-2xl p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
             <div className="mb-6">
               {/* Profile Header */}
-              <div className="flex items-center justify-around text-center mb-6">
+              <div className="flex flex-col sm:flex-row items-center justify-around gap-6 text-center mb-6">
                 {/* Avatar */}
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full flex-shrink-0 overflow-hidden ">
                   {userInfo.photo ? (

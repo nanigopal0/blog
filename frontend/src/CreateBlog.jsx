@@ -81,7 +81,7 @@ function CreateBlog() {
     );
   else
     return (
-      <div className="p-8 flex flex-col items-center min-h-screen ">
+      <div className="lg:px-8 py-8 px-4 flex flex-col items-center min-h-screen ">
         {previewPost && (
           <PreviewPost
             onClose={() => setPreviewPost(false)}
@@ -91,7 +91,7 @@ function CreateBlog() {
         {/* Cover Image Input */}
         <div
           onClick={handleCoverImageClick}
-          className="h-72 w-4/5 md:w-1/2 mb-8 flex justify-center items-center border border-gray-600 rounded-lg overflow-hidden cursor-pointer"
+          className="h-72 sm:w-3/5 md:w-1/2 w-full mb-8 flex justify-center items-center border border-gray-600 rounded-lg overflow-hidden cursor-pointer"
         >
           {previewImage ? (
             <img
@@ -100,7 +100,7 @@ function CreateBlog() {
               className="w-full h-full object-cover "
             />
           ) : (
-            <p className="text-gray-600 font-medium">
+            <p className=" text-gray-600 font-medium text-sm">
               Click to choose a cover image
             </p>
           )}
@@ -117,7 +117,7 @@ function CreateBlog() {
         </div>
 
         {/* Blog Title and Category */}
-        <div className="w-4/5 md:w-2/3 mb-8">
+        <div className="sm:w-4/5 w-full md:w-2/3 mb-8">
           <div className="mb-6">
             <label
               htmlFor="category"
@@ -155,9 +155,9 @@ function CreateBlog() {
         </div>
 
         {/* Blog Content */}
-        <div className="w-full lg:max-w-4/5 p-4 mb-8">
+        <div className="w-full lg:max-w-4/5 mb-8">
           <h3 className="text-lg font-semibold mb-4">Content</h3>
-          <div className="p-1 w-full rounded-2xl border border-black/20 dark:border-white/20 shadow-lg overflow-auto">
+          <div className="p-1 w-full rounded-2xl border border-black/20 dark:border-white/20 shadow-lg overflow-hidden">
             <SimpleEditor
               onActivate={setEditor}
               initialContent={"Start typing..."}

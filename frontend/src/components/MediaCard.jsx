@@ -11,13 +11,13 @@ export default function MediaCard({ blog }) {
 
   return (
     <div
-      className="max-w-sm min-w-0 w-full bg-black/20 border dark:border-black/10
-       border-white/10 dark:bg-white/20 rounded-lg hover:shadow-xl transition-all
+      className="max-w-sm min-w-0 w-full bg-gray-200 border dark:border-white/20
+       border-black/20 dark:bg-white/20 rounded-lg hover:shadow-xl transition-all
        duration-300 hover:scale-105 cursor-pointer overflow-hidden "
       onClick={() => navigateReader(blog.id)}
     >
       {/* Blog Cover Image */}
-      <div className="h-44 w-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+      <div className="h-44 w-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
         <img
           src={blog.coverImage}
           alt={blog.title}
@@ -78,7 +78,7 @@ export default function MediaCard({ blog }) {
         </div>
 
         {/* Category Badge */}
-        <div className="bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-1 rounded-full text-xs font-medium">
+        <div className="bg-teal-100 border dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-1 rounded-full text-xs font-medium">
           {blog.category?.category || "Uncategorized"}
         </div>
       </div>
