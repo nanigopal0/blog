@@ -34,15 +34,15 @@ export const getCurrentUser = async () => {
   return response.data;
 };
 
-export const deleteUser = async () => {
-  const response = await axios.delete("/api/user/delete", {
+export const deleteUser = async (otp) => {
+  const response = await axios.delete(`/api/user/verify-delete-user?otp=${otp}`, {
     withCredentials: true,
     headers: {
       "Content-Type": "application/json",
     },
   });
   if (response.status === 204) {
-    Cookies.remove("token");
+    Cookies.remove("jwt");
   }
   return response.data;
 };

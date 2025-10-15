@@ -1,13 +1,17 @@
 import { AuthContext } from "@/contexts/AuthContext";
 import apiErrorHandle from "@/util/APIErrorHandle";
-import { updateUser } from "@/util/UserUtil";
+import axios from "axios";
 import { useContext, useState } from "react";
 import toast from "react-hot-toast";
+import Dialog from "./Dialog";
+import { getCurrentUser } from "@/util/UserUtil";
 
-export default function ChangeEmail({ email }) {
-  const [updatedEmail, setUpdatedEmail] = useState(email);
+export default function ChangeEmail({ isOpen, onClose }) {
+  const [updatedEmail, setUpdatedEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [currentEmail, setCurrentEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isVerifyEmailSent, setIsVerifyEmailSent] = useState(false);
+  const [isVerificationEmailSent, setIsVerificationEmailSent] = useState(false);
   const { updateUserInfo, removeCreds } = useContext(AuthContext);
   const [otp, setOTP] = useState("");
 
@@ -15,9 +19,60 @@ export default function ChangeEmail({ email }) {
     setLoading(true);
     const loadingId = toast.loading("Verifying...");
     try {
-      const result = await updateUser({ email: updatedEmail });
-      updateUserInfo(result);
-      toast.success("Email updated successfully. Please login again.");
+      const result = await axios.put(
+        "/api/user/verify-update-email",
+        {
+          email: updatedEmail,
+          OTP: otp,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      if (result.status === 204) {
+        toast.success(result.data || "Email updated successfully");
+        const response = await getCurrentUser();
+        updateUserInfo(response);
+        setOTP("");
+        onClose();
+      }
+    } catch (error) {
+      apiErrorHandle(error, removeCreds);
+    } finally {
+      toast.dismiss(loadingId);
+      setLoading(false);
+    }
+  };
+
+  const sendOTP = async () => {
+    if (!currentEmail.trim() || !updatedEmail.trim() || !password.trim()) {
+      toast.error("Please fill all the fields");
+      return;
+    }
+    setLoading(true);
+    const loadingId = toast.loading("Sending OTP...");
+    try {
+      const result = await axios.post(
+        "/api/user/change-email-otp",
+        {
+          email: currentEmail,
+          password: password,
+          newEmail: updatedEmail
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      if (result.status === 200) {
+        toast.success(result.data || "OTP sent successfully");
+        setIsVerificationEmailSent(true);
+      }
     } catch (error) {
       apiErrorHandle(error, removeCreds);
     } finally {
@@ -27,48 +82,74 @@ export default function ChangeEmail({ email }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={updatedEmail}
-          disabled={isVerifyEmailSent}
-          onChange={(e) => setUpdatedEmail(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-500 rounded-lg
-           bg-white dark:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-600 disabled:dark:text-gray-400"
-        />
-      </div>
-
-      {isVerifyEmailSent && (
-        <div className="mx-auto">
-          OTP &nbsp;
+    <Dialog isOpen={isOpen} onClose={onClose} title={"Update Email"}>
+      <div className="flex flex-col gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">
+            Current Email
+          </label>
           <input
-            type="number"
-            value={otp}
-            onChange={(e) => setOTP(e.target.value)}
-            className="px-3 py-2 border border-gray-500 rounded-lg bg-white dark:bg-gray-700"
+            id="email"
+            type="email"
+            value={currentEmail}
+            disabled={isVerificationEmailSent}
+            onChange={(e) => setCurrentEmail(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-500 rounded-lg mb-4
+           bg-white dark:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-600 disabled:dark:text-gray-400"
+          />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            disabled={isVerificationEmailSent}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-500 rounded-lg mb-4
+           bg-white dark:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-600 disabled:dark:text-gray-400"
+          />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ">
+            New Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={updatedEmail}
+            disabled={isVerificationEmailSent}
+            onChange={(e) => setUpdatedEmail(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-500 rounded-lg mb-2
+           bg-white dark:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-600 disabled:dark:text-gray-400"
           />
         </div>
-      )}
 
-      <button
-        onClick={isVerifyEmailSent ? handleVerifyClick : sendOTP}
-        disabled={loading}
-        className=" bg-blue-600 mx-auto hover:bg-blue-700 disabled:text-gray-400 disabled:bg-blue-900 disabled:cursor-not-allowed
+        {isVerificationEmailSent && (
+          <div className="mx-auto">
+            OTP &nbsp;
+            <input
+              type="number"
+              value={otp}
+              onChange={(e) => setOTP(e.target.value)}
+              className="px-3 py-2 border border-gray-500 rounded-lg bg-white dark:bg-gray-700"
+            />
+          </div>
+        )}
+
+        <button
+          onClick={isVerificationEmailSent ? handleVerifyClick : sendOTP}
+          disabled={loading}
+          className=" bg-blue-600 mx-auto hover:bg-blue-700 disabled:text-gray-400 disabled:bg-blue-900 disabled:cursor-not-allowed
          text-white font-medium py-2 px-4 rounded-full cursor-pointer "
-      >
-        {isVerifyEmailSent
-          ? loading
-            ? "Verifying..."
-            : "Verify"
-          : loading
-          ? "Sending OTP..."
-          : "Send OTP"}
-      </button>
-    </div>
+        >
+          {isVerificationEmailSent
+            ? loading
+              ? "Verifying..."
+              : "Verify"
+            : loading
+            ? "Sending OTP..."
+            : "Send OTP"}
+        </button>
+      </div>
+    </Dialog>
   );
 }

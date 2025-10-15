@@ -1,21 +1,25 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../contexts/AuthContext";
 import { emailValidate, passwordValidate } from "../util/RegisterInputValidate";
-import { AlertCircle, Loader } from "lucide-react";
 import Dialog from "./Dialog";
 import LoadingIndicator from "./LoadingIndicator";
 import axios from "axios";
 import toast from "react-hot-toast";
+import ForgotPassword from "./ForgotPassword";
+import EmailVerification from "./EmailVerification";
 
 export default function LoginDialog({ open, onClose, onChangeRegister }) {
   const navigate = useNavigate();
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const { updateUserInfo, logout } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+  const [verificationNeeded, setVerificationNeeded] = useState(false);
+  const [email, setEmail] = useState("");
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -34,9 +38,12 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
       });
       saveResponseLocally(result.data);
       toast.success("Login Successful");
-      onClose(); 
+      onClose();
       navigate("/home");
     } catch (error) {
+      if (error.response && error.response.status === 401) {
+        setVerificationNeeded(true);
+      }
       setErrorMessage(
         error.response?.data?.message ||
           error.message ||
@@ -66,6 +73,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
 
   const handleEmailChange = (event) => {
     const email = event.target.value;
+    setEmail(email);
     setIsEmailValid(emailValidate(email));
   };
 
@@ -90,6 +98,15 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
 
   return (
     <Dialog isOpen={open} onClose={handleClose} title={"Login to Blogify"}>
+      <ForgotPassword
+        isOpen={isForgotPasswordOpen}
+        onclose={() => setIsForgotPasswordOpen(false)}
+      />
+      <EmailVerification
+      email={email}
+        isOpen={verificationNeeded}
+        onclose={() => setVerificationNeeded(false)}
+      />
       <div className="p-4">
         {loading && <LoadingIndicator />}
 
@@ -129,8 +146,8 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           <div className="flex justify-end mt-1">
             <button
               type="button"
-              onClick={() => navigate("/forgot-password")}
-              className="text-violet-500 font-medium text-sm"
+              onClick={() => setIsForgotPasswordOpen(true)}
+              className="text-violet-500 font-medium text-sm hover:underline cursor-pointer"
             >
               Forgot password?
             </button>

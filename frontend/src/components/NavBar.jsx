@@ -129,8 +129,8 @@ export default function NavBar() {
 
         {isMobileMenuOpen && (
           <div
-            className="absolute top-14 z-50 right-4 w-2/5 py-8 bg-gray-400
-           dark:bg-gray-700 rounded-md items-center justify-center flex"
+            className="absolute top-14 z-50 right-4 w-2/5 py-8 bg-gray-300/60 backdrop-blur-xs border border-black/30 dark:border-white/30
+           dark:bg-gray-700/80 rounded-md items-center justify-center flex shadow-2xl shadow-gray-700/30 dark:shadow-gray-400/30"
             onClick={() => setMobileMenuOpen(false)}
           >
             <div className="w-2/3 gap-y-5 flex flex-col items-center">

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { emailValidate, passwordValidate } from "../util/RegisterInputValidate";
-import { Loader, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import Dialog from "./Dialog";
 import LoadingIndicator from "./LoadingIndicator";
 import axios from "axios";
 import toast from "react-hot-toast";
+import EmailVerification from "./EmailVerification";
 
 export default function RegisterDialog({ open, onClose, onChangeLogin }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +19,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
-  const [time, setTime] = useState(5);
+  const [verificationNeeded, setVerificationNeeded] = useState(false);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -39,7 +40,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
       setErrorMessage(null);
       toast.success(result.data);
       setIsRegisterSuccess(true);
-      timer(time);
+      setVerificationNeeded(true);
     } catch (error) {
       setErrorMessage(
         error.response?.data?.message ||
@@ -52,19 +53,6 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const timer = async (timeOut) => {
-    let countdown = timeOut;
-    const interval = setInterval(() => {
-      if (countdown <= 0) {
-        clearInterval(interval);
-        onChangeLogin();
-        return;
-      }
-      setTime((val) => val - 1);
-      countdown--;
-    }, 1000);
   };
 
   const handlePasswordChange = (event) => {
@@ -98,7 +86,6 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
     setIsPasswordValid(false);
     setIsEmailValid(false);
     setIsRegisterSuccess(false);
-    setTime(5);
   };
 
   // Handle dialog close
@@ -111,14 +98,14 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
 
   return (
     <Dialog isOpen={open} onClose={handleClose} title={"Register to Blogify"}>
+    <EmailVerification email={email} isOpen={verificationNeeded} onclose={()=>setVerificationNeeded(false)}/>
       <div>
         {loading && <LoadingIndicator />}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {isRegisterSuccess && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
-              Successfully registered! Login to access Blogify. Redirect to
-              Login in {time}s
+              Successfully registered! Verify your email to login.
             </div>
           )}
 

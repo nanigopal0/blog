@@ -17,7 +17,7 @@ export default function Dialog({ isOpen, onClose, title, children }) {
       onClick={handleBackdropClick}
     >
       <div className="w-full max-h-[90vh] my-4 max-w-md lg:max-w-xl mx-4 bg-gray-200
-       dark:bg-gray-800 border border-black/30 dark:border-white/20 shadow-2xl rounded-lg overflow-hidden flex flex-col">
+       dark:bg-gray-800 border border-black/30 dark:border-white/20 shadow-2xl rounded-xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center p-4 border-b border-gray-200 dark:border-gray-600">
           <h2 className="text-2xl text-center flex-1 font-medium text-gray-800 dark:text-gray-200">

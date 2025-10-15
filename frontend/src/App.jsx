@@ -16,7 +16,6 @@ const Dashboard = React.lazy(() => import("./Dashboard"));
 const Profile = React.lazy(() => import("./Profile"));
 const CreateBlog = React.lazy(() => import("./CreateBlog"));
 const EditBlog = React.lazy(() => import("./EditBlog"));
-const Settings = React.lazy(() => import("./Settings"));
 const About = React.lazy(() => import("./About"));
 
 function App() {

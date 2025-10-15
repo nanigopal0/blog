@@ -11,11 +11,11 @@ import Dialog from "./components/Dialog";
 import UpdateProfile from "./components/UpdateProfile";
 import ChangeEmail from "./components/ChangeEmail";
 import ChangePassword from "./components/ChangePassword";
-import toast from "react-hot-toast";
+import DeleteAccount from "./components/DeleteAccount";
 
 function Profile() {
   const [loading, setLoading] = useState(true);
-
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const { userInfo, removeCreds, logout, updateUserInfo } =
     useContext(AuthContext);
   const [displayFollowers, setDisplayFollowers] = useState(false);
@@ -44,19 +44,6 @@ function Profile() {
     logout();
   };
 
-  const handleDeleteAccount = async () => {
-    const loadingId = toast.loading("Deleting account...");
-    try {
-      const result = await deleteUser();
-      toast.success(result || "Account deleted successfully");
-      removeCreds();
-    } catch (error) {
-      apiErrorHandle(error, removeCreds);
-    } finally {
-      toast.dismiss(loadingId);
-    }
-  };
-
   if (loading)
     return (
       <div className="h-screen flex justify-center items-center">
@@ -65,9 +52,9 @@ function Profile() {
     );
   else
     return (
-      <div className="p-5 flex justify-center items-center min-h-screen ">
+      <div className="p-5 flex justify-center items-center min-h-screen backdrop-blur-2xl ">
         {userInfo && (
-          <div className="w-full max-w-2xl p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+          <div className="w-full max-w-2xl p-6 border border-black/30 dark:border-white/20  rounded-lg shadow-xl">
             <div className="mb-6">
               {/* Profile Header */}
               <div className="flex flex-col sm:flex-row items-center justify-around gap-6 text-center mb-6">
@@ -155,42 +142,30 @@ function Profile() {
               />
             )}
 
-            {showUpdateProfileDialog && (
-              <Dialog
-                isOpen={showUpdateProfileDialog}
-                onClose={() => setShowUpdateProfileDialog(false)}
-                title={"Update Profile"}
-              >
-                <UpdateProfile
-                  email={userInfo.email}
-                  name={userInfo.name}
-                  photo={userInfo.photo}
-                />
-              </Dialog>
-            )}
+            <UpdateProfile
+              email={userInfo.email}
+              name={userInfo.name}
+              photo={userInfo.photo}
+              isOpen={showUpdateProfileDialog}
+              onClose={() => setShowUpdateProfileDialog(false)}
+            />
 
-            {showChangeEmailDialog && (
-              <Dialog
-                isOpen={showChangeEmailDialog}
-                onClose={() => setShowChangeEmailDialog(false)}
-                title={"Change Email"}
-              >
-                <ChangeEmail email={userInfo.email} />
-              </Dialog>
-            )}
+            <ChangeEmail
+              isOpen={showChangeEmailDialog}
+              onClose={() => setShowChangeEmailDialog(false)}
+            />
 
-            {showChangePasswordDialog && (
-              <Dialog
-                isOpen={showChangePasswordDialog}
-                onClose={() => setShowChangePasswordDialog(false)}
-                title={"Change Password"}
-              >
-                <ChangePassword />
-              </Dialog>
-            )}
+            <ChangePassword
+              isOpen={showChangePasswordDialog}
+              onClose={() => setShowChangePasswordDialog(false)}
+            />
 
+            <DeleteAccount
+              isOpen={showDeleteAccountDialog}
+              onClose={() => setShowDeleteAccountDialog(false)}
+            />
             {/* Divider */}
-            <div className="border-t border-gray-200 dark:border-gray-700 my-4" />
+            <div className="border-t border-gray-400 dark:border-gray-700 my-4" />
 
             <div className="flex flex-col items-start gap-4">
               <button
@@ -199,12 +174,12 @@ function Profile() {
               >
                 Update Profile
               </button>
-              {/* <button
-              onClick={() => setShowChangeEmailDialog(true)}
-              className="hover:underline cursor-pointer  text-gray-700 dark:text-gray-300"
-            >
-              Change Email
-            </button> */}
+              <button
+                onClick={() => setShowChangeEmailDialog(true)}
+                className="hover:underline cursor-pointer  text-gray-700 dark:text-gray-300"
+              >
+                Update Email
+              </button>
               <button
                 onClick={() => setShowChangePasswordDialog(true)}
                 className="hover:underline cursor-pointer  text-gray-700 dark:text-gray-300"
@@ -212,8 +187,8 @@ function Profile() {
                 Change Password
               </button>
               <button
-                onClick={handleDeleteAccount}
-                className="cursor-pointer hover:bg-red-400/20 text-red-500 font-medium hover:py-2 hover:px-4 rounded-full"
+                onClick={() => setShowDeleteAccountDialog(true)}
+                className="cursor-pointer hover:underline text-red-400 font-medium "
               >
                 Delete Account
               </button>

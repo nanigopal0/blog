@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            background: #f6f8fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 480px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+        }
+        .otp-box {
+            display: inline-block;
+            border: 2px dashed #ff9800;
+            background: #fff3e0;
+            color: #d84315;
+            font-size: 2.5em;
+            letter-spacing: 16px;
+            padding: 18px 36px;
+            border-radius: 10px;
+            margin: 24px 0;
+            font-weight: bold;
+        }
+        .footer {
+            color: #888;
+            font-size: 0.95em;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .brand {
+            color: #ff9800;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Hello <span style="color:#1976d2;" th:text="${name}"></span>,</h2>
+    <p>
+        Your <span class="brand">Blogify</span> OTP for <span style="background-color: bisque" th:text="${reason}"></span> is:
+    </p>
+    <div style="text-align:center;">
+        <span class="otp-box" th:text="${otp}"></span>
+    </div>
+    <p style="margin-top:24px;">
+        <strong>This OTP is valid for 5 minutes.</strong>
+    </p>
+    <p>
+        If you did not request this, please ignore this email.
+    </p>
+    <div class="footer">
+        Thank you,<br>
+        <span class="brand">Team Blogify</span>
+    </div>
+</div>
+</body>
+</html>

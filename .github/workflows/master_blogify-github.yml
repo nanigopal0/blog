@@ -35,6 +35,8 @@ jobs:
           MYSQL_PASSWORD: ${{secrets.MYSQL_PASSWORD}}
           GOOGLE_CLIENT_ID: ${{secrets.GOOGLE_CLIENT_ID}}
           GOOGLE_CLIENT_SECRET: ${{secrets.GOOGLE_CLIENT_SECRET}}
+	  MAIL_USERNAME: ${{secrets.MAIL_USERNAME}}
+	  MAIL_PASSWORD: ${{secrets.MAIL_PASSWORD}}
 
       - name: Docker login
         uses: docker/login-action@v3
