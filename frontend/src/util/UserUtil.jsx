@@ -14,6 +14,18 @@ export const getUserByUsername = async (username) => {
   return response.data;
 };
 
+export const generateAccessTokenFromRefreshToken = async () =>{
+  const response = await axios.get(`/api/public/renew-acc-token?refreshToken=${Cookies.get("ref-token")}`,{
+    withCredentials: true,
+    headers: {
+      "Content-Type": "application/json",
+    }
+  });
+  if(response.status === 200){
+    console.log(response.data);
+  }
+}
+
 export const getUserById = async (userId) => {
   const response = await axios.get(`/api/user/get-by-id?id=${userId}`, {
     withCredentials: true,

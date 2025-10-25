@@ -25,6 +25,8 @@ public class User extends BaseUser {
 
     @Column(length = 1000)
     private String bio;
+
+    private String refreshToken;
     /**
      * One user have many follow records when the user is itself a followed
      *

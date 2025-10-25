@@ -37,8 +37,14 @@ public class PublicController {
     }
 
     @PostMapping("login")
-    public ResponseEntity<CurrentUserResponseDTO> login(@RequestBody SignInRequestDTO signInRequest) {
+    public ResponseEntity<LoginResponse> login(@RequestBody SignInRequestDTO signInRequest) {
         return ResponseEntity.ok(userService.login(signInRequest));
+    }
+
+    @GetMapping("renew-acc-token")
+    public String generateAccessToken(@RequestParam String refreshToken) {
+        userService.generateAccessTokenByRefreshToken(refreshToken);
+        return "Access token generated successfully!";
     }
 
     @GetMapping("/login/google")

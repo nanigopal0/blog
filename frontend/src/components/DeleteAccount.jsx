@@ -20,7 +20,8 @@ export default function DeleteAccount({ isOpen, onClose }) {
       toast.success(result || "Account deleted successfully");
       removeCreds();
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) handleDeleteAccount();
     } finally {
       setLoading(false);
       toast.dismiss(loadingId);
@@ -42,7 +43,8 @@ export default function DeleteAccount({ isOpen, onClose }) {
         setSentOTP(true);
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) sendDeleteOTP();
     } finally {
       setLoading(false);
       toast.dismiss(loadingId);

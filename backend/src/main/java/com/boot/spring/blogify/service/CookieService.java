@@ -1,5 +1,6 @@
 package com.boot.spring.blogify.service;
 
+import com.boot.spring.blogify.jwt.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -28,7 +29,7 @@ public class CookieService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(Duration.ofHours(1).getSeconds())
+                .maxAge(Duration.ofMinutes(JwtService.ACCESS_TOKEN_VALIDITY_IN_MINUTES).getSeconds())
                 .sameSite("None")
                 .build();
 

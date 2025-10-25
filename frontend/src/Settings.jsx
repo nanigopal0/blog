@@ -37,18 +37,26 @@ function Settings() {
         email: emailInput,
         photo: profileImageUrl,
       };
-      const response = await axios.put(`/api/user/update`, data, {
+      updateProfile(data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const updateProfile = async (data) => {
+    try {
+      await axios.put(`/api/user/update`, data, {
         withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
       });
-      console.log(response.data);
+
       setUpdateProfileButtonClicked(false);
     } catch (error) {
-      apiErrorHandle(error,()=>{})
-    } finally {
-      setLoading(false);
+      const retry = await apiErrorHandle(error, () => {});
+      if (retry) updateProfile(data);
     }
   };
 
@@ -68,11 +76,11 @@ function Settings() {
           "Content-Type": "application/json",
         },
       });
-      console.log(response.data);
 
       setChangePasswordButtonClicked(false);
     } catch (error) {
-     apiErrorHandle(error,removeCreds);
+      const retry =await apiErrorHandle(error, removeCreds);
+      if(retry) handleChangePassword();
     } finally {
       setLoading(false);
     }
@@ -94,7 +102,8 @@ function Settings() {
         logout();
       }
     } catch (error) {
-     apiErrorHandle(error,removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) handleDeleteAccount();
     } finally {
       setLoading(false);
     }

@@ -49,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                if (jwtService.isTokenValid(token)) {
+                if (jwtService.isAccessTokenValid(token)) {
                     BaseUser user = new BaseUser();
                     user.setId(Long.parseLong(jwtClaims.get("id", String.class)));
                     user.setRole(Role.valueOf(jwtClaims.get("role", String.class)));

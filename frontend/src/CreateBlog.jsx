@@ -34,7 +34,8 @@ function CreateBlog() {
       const cats = await getCategoriesFromServer();
       setCategories([{ id: 0, category: "Choose a category" }, ...cats]);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) fetchCategories();
     } finally {
       setLoading(false);
     }
@@ -57,17 +58,25 @@ function CreateBlog() {
         categoryId: categories[selectedCategoryIdx].id,
       };
       if (data.content && data.coverImage && data.title) {
-        const response = await postBlog(data);
-        toast.success(response);
-        navigate("/home");
+        createBlogBackend(data);
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      console.log(error)
     } finally {
       toast.dismiss(loadingId);
     }
   };
-  
+
+  const createBlogBackend = async (data) => {
+    try {
+      const response = await postBlog(data);
+      toast.success(response);
+      navigate("/home");
+    } catch (error) {
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) createBlogBackend(data);
+    }
+  };
 
   const handleCoverImageClick = () => {
     coverImageInputRef.current.click();

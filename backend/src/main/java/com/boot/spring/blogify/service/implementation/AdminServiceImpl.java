@@ -97,7 +97,7 @@ public class AdminServiceImpl implements AdminService {
     public void login(Admin admin) {
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(admin.getEmail(), admin.getPassword()));
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        String token = jwtService.generateToken(userDetails.getUserName(), userDetails.getFullName(),
+        String token = jwtService.generateAccessToken(userDetails.getUserName(), userDetails.getFullName(),
                 userDetails.getId(), userDetails.getRole(), userDetails.getUsername());
         cookieService.addTokenToCookie(response, token);
     }

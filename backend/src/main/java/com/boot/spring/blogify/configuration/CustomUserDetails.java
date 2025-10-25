@@ -1,6 +1,7 @@
 package com.boot.spring.blogify.configuration;
 
 import com.boot.spring.blogify.entity.BaseUser;
+import com.boot.spring.blogify.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +19,11 @@ public class CustomUserDetails implements UserDetails {
 
     public Long getId() {
         return user.getId();
+    }
+
+    public String getRefreshToken(){
+        if (user instanceof User) return ((User) user).getRefreshToken();
+        return null;
     }
 
     public String getUserPhoto() {

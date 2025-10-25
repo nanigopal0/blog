@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class CurrentUserResponseDTO extends UserDTO {
     private String email;
     private Role role;

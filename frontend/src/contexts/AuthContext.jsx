@@ -2,6 +2,7 @@ import { createContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
 import apiErrorHandle from "@/util/APIErrorHandle";
+import { generateAccessTokenFromRefreshToken } from "@/util/UserUtil";
 
 export const AuthContext = createContext();
 
@@ -33,6 +34,15 @@ export const AuthProvider = ({ children }) => {
       return response.status === 200 ? true : false;
     } catch (error) {
       console.error("Failed to ping", error.message || error);
+      const ref = Cookies.get("ref-token");
+      if(ref){
+        try{
+          await generateAccessTokenFromRefreshToken();
+          return ping();
+        }catch(err){
+          console.log(err);
+        }
+      }
       return false;
     }
   };
@@ -59,6 +69,7 @@ export const AuthProvider = ({ children }) => {
 
   const removeCreds = () => {
     Cookies.remove("user");
+    Cookies.remove("ref-token");
     setIsAuthenticated(false);
     setUserInfo(null);
   };

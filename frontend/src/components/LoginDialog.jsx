@@ -8,6 +8,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import ForgotPassword from "./ForgotPassword";
 import EmailVerification from "./EmailVerification";
+import Cookies from "js-cookie";
 
 export default function LoginDialog({ open, onClose, onChangeRegister }) {
   const navigate = useNavigate();
@@ -63,7 +64,8 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
   };
 
   const saveResponseLocally = (resultData) => {
-    updateUserInfo(resultData);
+    updateUserInfo(resultData?.user);
+    Cookies.set("ref-token", resultData?.refreshToken, { secure: true, sameSite: 'Strict' });
   };
 
   const handlePasswordChange = (event) => {

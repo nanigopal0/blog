@@ -7,6 +7,7 @@ import LoadingIndicator from "./components/LoadingIndicator";
 import UserDetails from "./UserDetails";
 import toast, { Toaster } from "react-hot-toast";
 import apiErrorHandle from "./util/APIErrorHandle";
+import axios from "axios";
 
 const LandingPage = React.lazy(() => import("./LandingPage"));
 const Search = React.lazy(() => import("./Search"));
@@ -44,18 +45,17 @@ function App() {
 
   const getUserInfo = async (token) => {
     try {
-      const response = await fetch(
+      const response = await axios.get(
         `/api/public/oauth2-success/jwt-token?token=${token}`,
         {
-          method: "GET",
+          withCredentials: true,
           headers: {
             "Content-type": "application/json",
-          },
-          credentials: "include",
+          }
         }
       );
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = await response.data();
         updateUserInfo(data);
         window.location.href = "/home"; // Redirect to home after successful login
       }

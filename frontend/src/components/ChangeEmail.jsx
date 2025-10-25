@@ -40,7 +40,8 @@ export default function ChangeEmail({ isOpen, onClose }) {
         onClose();
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handleVerifyClick();
     } finally {
       toast.dismiss(loadingId);
       setLoading(false);
@@ -74,7 +75,8 @@ export default function ChangeEmail({ isOpen, onClose }) {
         setIsVerificationEmailSent(true);
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) sendOTP();
     } finally {
       toast.dismiss(loadingId);
       setLoading(false);

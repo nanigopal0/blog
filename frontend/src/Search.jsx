@@ -43,7 +43,8 @@ function Search() {
       if (fetchedBlogPage.size != pageSize) setPageSize(fetchedBlogPage.size);
       setSearchedBlogPage(fetchedBlogPage);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) fetchSearchedBlogs(pageNumber, pageSize);
     } finally {
       setLoading(false);
     }
@@ -57,7 +58,8 @@ function Search() {
       if (result.size != pageSize) setPageSize(result.size);
       setUserPage(result);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if( retry) fetchUsers(pageNumber, pageSize);
     } finally {
       setLoading(false);
     }

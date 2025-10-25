@@ -90,11 +90,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CurrentUserResponseDTO login(SignInRequestDTO signInRequest) {
+    public LoginResponse login(SignInRequestDTO signInRequest) {
         User loadedUser = userRepo.findByEmail(signInRequest.getEmail()).orElseThrow(() -> new UserNotFoundException(signInRequest.getEmail()));
         if (!loadedUser.isUserVerified()) {
-            User savedUser = userRepo.save(loadedUser);
-            otpService.generateOTP(savedUser.getId(), savedUser.getName(), savedUser.getEmail(), Reason.USER_VERIFICATION);
+            otpService.generateOTP(loadedUser.getId(), loadedUser.getName(), loadedUser.getEmail(), Reason.USER_VERIFICATION);
             throw new UserNotVerifiedException(signInRequest.getEmail() + " is not verified yet! OTP sent to your email");
         }
         if (loadedUser.getAuthMode() == AuthMode.OAUTH2)
@@ -103,15 +102,22 @@ public class UserServiceImpl implements UserService {
         Authentication authResponse = authenticationManager.authenticate(authRequest);
         if (authResponse.isAuthenticated()) {
             CustomUserDetails userDetails = (CustomUserDetails) authResponse.getPrincipal();
-            String token = jwtService.generateToken(userDetails.getUserName(), userDetails.getFullName(),
+            String accessToken = jwtService.generateAccessToken(userDetails.getUserName(), userDetails.getFullName(),
                     userDetails.getId(), userDetails.getRole(), userDetails.getUsername());
+            String refreshToken = jwtService.generateRefreshToken(userDetails.getId(), userDetails.getRole(),
+                    userDetails.getUsername(), userDetails.getUserName());
 
-            cookieService.addTokenToCookie(response, token);
+            loadedUser.setRefreshToken(refreshToken);
+            userRepo.save(loadedUser);
+            cookieService.addTokenToCookie(response, accessToken);
 
             Long totalBlogs = blogService.countTotalBlogsByUserId(loadedUser.getId());
             Long totalFollower = followerService.getFollowerCount(loadedUser.getId());
             Long totalFollowing = followerService.getFollowingCount(loadedUser.getId());
-            return entityToDTO.convertUserToCurrentUserResponseDTO(loadedUser, totalFollowing, totalFollower, totalBlogs);
+            return LoginResponse.builder()
+                    .user(entityToDTO.convertUserToCurrentUserResponseDTO(loadedUser, totalFollowing, totalFollower, totalBlogs))
+                    .refreshToken(refreshToken)
+                    .build();
         } else throw new BadCredentialsException("Authentication failed");
     }
 
@@ -201,10 +207,17 @@ public class UserServiceImpl implements UserService {
         User user = getUser();
         if (otpService.verifyOTP(user.getId(), dto.OTP(), Reason.UPDATE_EMAIL)) {
             user.setEmail(dto.email());
-            String token = jwtService.generateToken(user.getUsername(), user.getName(),
+            String token = jwtService.generateAccessToken(user.getUsername(), user.getName(),
                     user.getId(), user.getRole().name(), dto.email());
             cookieService.addTokenToCookie(response, token);
         } else throw new BadCredentialsException("Invalid OTP");
+    }
+
+    @Override
+    public void generateAccessTokenByRefreshToken(String refreshToken) {
+        if (refreshToken == null) throw new BadCredentialsException("Refresh token is null");
+        String accessToken = jwtService.validateRefreshTokenAndGenerateAccessToken(refreshToken);
+        cookieService.addTokenToCookie(response, accessToken);
     }
 
     @Override
@@ -298,6 +311,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void logout() {
+        User currentUser = getUser();
+        currentUser.setRefreshToken(null);
+        userRepo.save(currentUser);
         cookieService.deleteJWTFromCookie(response);
     }
 
@@ -316,7 +332,7 @@ public class UserServiceImpl implements UserService {
         }
         User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
         if (user.getEmail().equals(email)) {
-            String jwtToken = jwtService.generateToken(user.getUsername(), user.getName(), user.getId(),
+            String jwtToken = jwtService.generateAccessToken(user.getUsername(), user.getName(), user.getId(),
                     user.getRole().name(), user.getEmail());
             cookieService.addTokenToCookie(response, jwtToken);
             Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());

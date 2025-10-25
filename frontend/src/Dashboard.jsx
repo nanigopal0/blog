@@ -32,7 +32,8 @@ function Dashboard() {
       setPage(resultData.number);
       setPageSize(resultData.size);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) fetchData();
     } finally {
       setLoading(false);
     }

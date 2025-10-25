@@ -29,16 +29,25 @@ export default function UpdateProfile({ email, name, photo, isOpen, onClose }) {
         photo: profileImageUrl,
         email: updatedEmail,
       };
-      const response = await updateUser(data);
-      updateUserInfo(response);
-      toast.success("Profile updated successfully");
+      await updateUserBackend(data);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      console.log(error);
     } finally {
       setLoading(false);
       toast.dismiss(loadingId);
     }
   };
+
+  const updateUserBackend = async (data)=>{
+    try{
+      const response = await updateUser(data);
+      updateUserInfo(response);
+      toast.success("Profile updated successfully");
+    }catch(error){
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) updateUserBackend(data);
+    }
+  }
 
   const handleChangeImageInput = (e) => {
     setUpdatedPhoto(URL.createObjectURL(e.target.files[0]));

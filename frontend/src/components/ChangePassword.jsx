@@ -26,7 +26,8 @@ export default function ChangePassword({ isOpen, onClose }) {
         const result = await updatePassword(data);
         toast.success(result);
       } catch (error) {
-        apiErrorHandle(error, removeCreds);
+        const retry = await apiErrorHandle(error, removeCreds);
+        if(retry) handleChangePassword();
       } finally {
         toast.dismiss(loadingId);
         setLoading(false);

@@ -43,7 +43,8 @@ function EditBlog() {
       const cats = await getCategoriesFromServer({ logout });
       setCategories([{ id: 0, category: "Choose a category" }, ...cats]);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) await fetchCategories();
     } finally {
       if (blog) setLoading(false);
     }
@@ -63,7 +64,8 @@ function EditBlog() {
       setPreviewImage(result.coverImage);
       setBlogTitle(result.title);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) await fetchBlog();
     } finally {
       if (categories.length > 1) setLoading(false);
     }
@@ -91,14 +93,23 @@ function EditBlog() {
         content: JSON.stringify(editor.getJSON()),
       };
       if (data.content && data.coverImage && data.title) {
-        const response = await updateBlogById(data);
-        toast.success(response);
-        navigate("/home");
+        updateBlogBackend(data);
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      console.log(error);
     } finally {
       toast.dismiss(loadingId);
+    }
+  };
+
+  const updateBlogBackend = async (data) => {
+    try {
+      const response = await updateBlogById(data);
+      toast.success(response);
+      navigate("/home");
+    } catch (error) {
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) await updateBlogBackend(data);
     }
   };
 
@@ -215,7 +226,7 @@ function EditBlog() {
           <button
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4
              rounded-md transition-colors"
-            onClick={ handleEditBlogBtn}
+            onClick={handleEditBlogBtn}
             disabled={loading}
           >
             {loading ? "Updating..." : "Update Blog"}

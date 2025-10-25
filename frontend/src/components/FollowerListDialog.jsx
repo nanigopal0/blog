@@ -30,7 +30,8 @@ export default function FollowerListDialog({
         : await getFollowings(userId);
       setFollowers(result);
     } catch (error) {
-      apiErrorHandle(error, logout);
+      const retry = await apiErrorHandle(error, logout);
+      if(retry) fetchFollowers();
     } finally {
       setLoading(false);
     }

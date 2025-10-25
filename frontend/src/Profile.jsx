@@ -30,7 +30,8 @@ function Profile() {
       const response = await getCurrentUser();
       updateUserInfo(response);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) fetchUser();
     } finally {
       setLoading(false);
     }

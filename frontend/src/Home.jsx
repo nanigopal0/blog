@@ -38,7 +38,8 @@ function Home() {
       const result = await getCategoriesFromServer();
       setCategories([{ id: 0, category: "All" }, ...result]);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) await fetchCategories();
     } finally {
       if (blogPage) setLoading(false);
     }
@@ -60,7 +61,8 @@ function Home() {
 
       updateBlogContent(fetchedBlogs);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if(retry) fetchBlog();
     } finally {
       if (categories) setLoading(false);
     }

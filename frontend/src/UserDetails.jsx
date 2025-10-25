@@ -35,7 +35,8 @@ export default function UserDetails() {
       const fetchedBlogs = await getBlogsByUser(param.id, pageNumber, pageSize);
       setBlog(fetchedBlogs || []);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) fetchUserBlogs(0, ConstBlogPageSize[0]);
     } finally {
       if (user) setLoading(false);
     }
@@ -47,7 +48,8 @@ export default function UserDetails() {
       const fetchedUser = await getUserById(param.id);
       setUser(fetchedUser);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) fetchUser();
     } finally {
       if (blog) setLoading(false);
     }
@@ -58,7 +60,8 @@ export default function UserDetails() {
       const response = await isFollowing(userInfo.id, param.id);
       setIsFollow(response);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) isFollowedByCurrentUser();
     }
   };
 
@@ -75,7 +78,8 @@ export default function UserDetails() {
       fetchUser();
       setIsFollow(true);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handleFollowClick();
     } finally {
       toast.dismiss(loadingId);
     }
@@ -94,7 +98,8 @@ export default function UserDetails() {
       fetchUser();
       setIsFollow(false);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handleUnfollowClick();
     } finally {
       toast.dismiss(loadingId);
     }
@@ -106,7 +111,6 @@ export default function UserDetails() {
         <LoadingIndicator />
       </div>
     );
-    
   else
     return (
       <div className="min-h-screen ">

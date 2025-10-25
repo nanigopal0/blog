@@ -15,7 +15,7 @@ import java.util.List;
 
 public interface UserService {
 
-    CurrentUserResponseDTO login(SignInRequestDTO signInRequest);
+    LoginResponse login(SignInRequestDTO signInRequest);
 
     String register(UserRegisterRequestDTO user, AuthMode authMode);
 
@@ -52,4 +52,6 @@ public interface UserService {
     void updateEmailOtp(UpdateEmailDTO dto);
 
     void verifyAndUpdateEmail(EmailVerificationDTO dto);
+
+    void generateAccessTokenByRefreshToken(String refreshToken);
 }

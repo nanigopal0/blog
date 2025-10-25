@@ -42,7 +42,10 @@ function BlogReader() {
       const response = await getBlogById(param.id);
       setVariables(response);
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) 
+        fetchBlog();
+      
     } finally {
       setLoading(false);
     }
@@ -79,7 +82,8 @@ function BlogReader() {
         setBlog(updatedBlog);
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handleReaction();
     }
   };
 
@@ -133,7 +137,8 @@ function BlogReader() {
         toast.success("Comment posted successfully");
       }
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handlePostComment();
     }finally{
       toast.dismiss(loadingId);
     }
@@ -146,7 +151,8 @@ function BlogReader() {
       toast.success(response || "Blog deleted successfully");
       navigate("/home");
     } catch (error) {
-      apiErrorHandle(error, removeCreds);
+      const retry = await apiErrorHandle(error, removeCreds);
+      if (retry) handleDeleteBlog();
     } finally {
       toast.dismiss(loadingId);
     }
