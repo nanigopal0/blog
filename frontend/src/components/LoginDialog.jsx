@@ -8,7 +8,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import ForgotPassword from "./ForgotPassword";
 import EmailVerification from "./EmailVerification";
-import Cookies from "js-cookie";
 
 export default function LoginDialog({ open, onClose, onChangeRegister }) {
   const navigate = useNavigate();
@@ -17,7 +16,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const { updateUserInfo, logout } = useContext(AuthContext);
+  const { updateUserInfo, setRefreshToken } = useContext(AuthContext);
   const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
   const [verificationNeeded, setVerificationNeeded] = useState(false);
   const [email, setEmail] = useState("");
@@ -65,7 +64,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
 
   const saveResponseLocally = (resultData) => {
     updateUserInfo(resultData?.user);
-    Cookies.set("ref-token", resultData?.refreshToken, { secure: true, sameSite: 'Strict' });
+    setRefreshToken(resultData?.refreshToken);
   };
 
   const handlePasswordChange = (event) => {
@@ -105,7 +104,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
         onclose={() => setIsForgotPasswordOpen(false)}
       />
       <EmailVerification
-      email={email}
+        email={email}
         isOpen={verificationNeeded}
         onclose={() => setVerificationNeeded(false)}
       />

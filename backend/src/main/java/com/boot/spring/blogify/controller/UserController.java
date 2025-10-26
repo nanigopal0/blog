@@ -101,8 +101,8 @@ public class UserController {
     }
 
     @GetMapping("/ping")
-    public ResponseEntity<String> ping() {
-        return ResponseEntity.status(HttpStatus.OK).body("Ping successful!");
+    public String ping() {
+        return "Ping successful!";
     }
 
 }

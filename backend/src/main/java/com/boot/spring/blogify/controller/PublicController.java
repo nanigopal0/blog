@@ -43,7 +43,7 @@ public class PublicController {
 
     @GetMapping("renew-acc-token")
     public String generateAccessToken(@RequestParam String refreshToken) {
-        userService.generateAccessTokenByRefreshToken(refreshToken);
+        userService.generateAccessTokenFromRefreshToken(refreshToken);
         return "Access token generated successfully!";
     }
 
@@ -72,7 +72,7 @@ public class PublicController {
     }
 
     @GetMapping("/oauth2-success/jwt-token")
-    public ResponseEntity<CurrentUserResponseDTO> getJWTToken(@RequestParam(name = "token") String encodedToken)
+    public ResponseEntity<LoginResponse> getJWTToken(@RequestParam(name = "token") String encodedToken)
             throws JsonProcessingException, InvalidAlgorithmParameterException, NoSuchPaddingException,
             IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         return ResponseEntity.ok(userService.generateJWTTokenAfterOAuth2Success(encodedToken));

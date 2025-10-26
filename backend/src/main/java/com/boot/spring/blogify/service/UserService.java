@@ -35,7 +35,7 @@ public interface UserService {
 
     void logout();
 
-    CurrentUserResponseDTO generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
+    LoginResponse generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
             InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
             NoSuchAlgorithmException, BadPaddingException, InvalidKeyException;
 
@@ -53,5 +53,5 @@ public interface UserService {
 
     void verifyAndUpdateEmail(EmailVerificationDTO dto);
 
-    void generateAccessTokenByRefreshToken(String refreshToken);
+    void generateAccessTokenFromRefreshToken(String refreshToken);
 }

@@ -214,7 +214,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void generateAccessTokenByRefreshToken(String refreshToken) {
+    public void generateAccessTokenFromRefreshToken(String refreshToken) {
         if (refreshToken == null) throw new BadCredentialsException("Refresh token is null");
         String accessToken = jwtService.validateRefreshTokenAndGenerateAccessToken(refreshToken);
         cookieService.addTokenToCookie(response, accessToken);
@@ -318,7 +318,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public CurrentUserResponseDTO generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
+    public LoginResponse generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
             InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
             NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
 
@@ -332,13 +332,19 @@ public class UserServiceImpl implements UserService {
         }
         User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
         if (user.getEmail().equals(email)) {
+            String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getRole().name(),
+                    user.getEmail(), user.getUsername());
+            user.setRefreshToken(refreshToken);
+            userRepo.save(user);
             String jwtToken = jwtService.generateAccessToken(user.getUsername(), user.getName(), user.getId(),
                     user.getRole().name(), user.getEmail());
             cookieService.addTokenToCookie(response, jwtToken);
             Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
             Long totalFollower = followerService.getFollowerCount(user.getId());
             Long totalFollowing = followerService.getFollowingCount(user.getId());
-            return entityToDTO.convertUserToCurrentUserResponseDTO(user, totalBlogs, totalFollowing, totalFollower);
+            return LoginResponse.builder().refreshToken(refreshToken)
+                    .user(entityToDTO.convertUserToCurrentUserResponseDTO(user, totalBlogs, totalFollowing, totalFollower))
+                    .build();
         } else throw new BadCredentialsException("Email not match!");
     }
 

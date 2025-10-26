@@ -24,16 +24,25 @@ export default async function apiErrorHandle(error, removeCreds) {
       return false;
 
     default:
-      console.error(
-        error.response?.data?.message ||
+      try {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.response?.statusText ||
           error.message ||
-          "Error fetching from server"
-      );
-      toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Error fetching from server"
-      );
+          "Error fetching from server";
+
+        console.error("API Error:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+        });
+
+        toast.error(errorMessage);
+      } catch (toastError) {
+        console.error("Error handling API error:", toastError);
+        toast.error("An unexpected error occurred");
+      }
+
       return false;
   }
 }

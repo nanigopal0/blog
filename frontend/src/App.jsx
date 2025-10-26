@@ -20,7 +20,7 @@ const EditBlog = React.lazy(() => import("./EditBlog"));
 const About = React.lazy(() => import("./About"));
 
 function App() {
-  const { isAuthenticated, removeCreds, updateUserInfo } =
+  const { isAuthenticated, removeCreds, updateUserInfo, setRefreshToken } =
     useContext(AuthContext);
 
   useEffect(() => {
@@ -55,8 +55,9 @@ function App() {
         }
       );
       if (response.status === 200) {
-        const data = await response.data();
-        updateUserInfo(data);
+        const data = await response.data;
+        updateUserInfo(data?.user);
+        setRefreshToken(data?.refreshToken);
         window.location.href = "/home"; // Redirect to home after successful login
       }
     } catch (error) {

@@ -2,7 +2,10 @@ import { createContext, useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import axios from "axios";
 import apiErrorHandle from "@/util/APIErrorHandle";
-import { generateAccessTokenFromRefreshToken } from "@/util/UserUtil";
+import {
+  generateAccessTokenFromRefreshToken,
+  getCurrentUser,
+} from "@/util/UserUtil";
 
 export const AuthContext = createContext();
 
@@ -35,11 +38,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("Failed to ping", error.message || error);
       const ref = Cookies.get("ref-token");
-      if(ref){
-        try{
+      if (ref) {
+        try {
           await generateAccessTokenFromRefreshToken();
           return ping();
-        }catch(err){
+        } catch (err) {
           console.log(err);
         }
       }
@@ -49,19 +52,29 @@ export const AuthProvider = ({ children }) => {
 
   // Function to update user info in cookies and state to authenticated
   const updateUserInfo = (user) => {
-    Cookies.set("user", btoa(JSON.stringify(user)));
+    Cookies.set("user", btoa(JSON.stringify(user)), {
+      expires: 7,
+      secure: true,
+      sameSite: "Strict",
+      httpOnly: false,
+    });
     setUserInfo(user);
     setIsAuthenticated(true);
+  };
+
+  const setRefreshToken = (token) => {
+    Cookies.set("ref-token", token, {
+      expires: 7,
+      secure: true,
+      sameSite: "Strict",
+    });
   };
 
   const login = async () => {
     const isValidToken = await ping();
     if (isValidToken) {
-      setIsAuthenticated(true);
-      const user = Cookies.get("user");
-      if (user) {
-        setUserInfo(JSON.parse(atob(user)));
-      }
+      const fetchedUser = await getCurrentUser();
+      updateUserInfo(fetchedUser);
     } else {
       removeCreds();
     }
@@ -100,6 +113,7 @@ export const AuthProvider = ({ children }) => {
         removeCreds,
         userInfo,
         updateUserInfo,
+        setRefreshToken
       }}
     >
       {children}

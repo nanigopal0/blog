@@ -77,6 +77,7 @@ public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         }
         response.setStatus(HttpServletResponse.SC_OK);
         response.sendRedirect("https://blog-gama.vercel.app?token=" + token);
+//        response.sendRedirect("http://localhost:5173?token=" + token);
     }
 
 
