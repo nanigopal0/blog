@@ -1,5 +1,4 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import "react-quill/dist/quill.snow.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { uploadImage } from "./util/UploadImageCloudinary";
 import { AuthContext } from "./contexts/AuthContext";
