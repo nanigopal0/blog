@@ -84,11 +84,11 @@ function Home() {
   };
 
   return (
-    <div className="p-4 sm:p-3 md:p-5 min-h-screen">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 min-h-screen max-w-7xl mx-auto">
       {/* Horizontal Scrollable Header */}
       <div
         ref={scrollContainerRef}
-        className="mb-4 flex gap-4 overflow-x-auto py-3 px-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg whitespace-nowrap scrollbar-none cursor-grab select-none"
+        className="mb-6 flex gap-3 overflow-x-auto py-4 px-2 whitespace-nowrap scrollbar-none cursor-grab select-none"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -105,7 +105,7 @@ function Home() {
         ))}
       </div>
 
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-md mx-auto mb-8">
         <HeaderFilter
           onChangeSortBy={(e) => setSortBy(e.target.value)}
           onChangeSortOrder={(e) => setSortOrder(e.target.value)}
@@ -117,15 +117,20 @@ function Home() {
 
       {/* Blog Cards */}
       {loading ? (
-        <div className="mt-10">
+        <div className="mt-16 flex justify-center">
           <LoadingIndicator size={40}/>
         </div>
       ) : !blogPage || blogPage.empty ? (
-        <p className="text-center text-lg mt-10 text-gray-600 dark:text-gray-400">
-          No blogs available
-        </p>
+        <div className="mt-16 text-center">
+          <p className="text-xl text-gray-500 dark:text-gray-400">
+            No blogs available
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+            Check back later for new content
+          </p>
+        </div>
       ) : (
-        <div className="my-4 p-2 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {blogPage &&
             blogPage.content &&
             blogPage.content.map((blog) => (
@@ -135,7 +140,7 @@ function Home() {
       )}
 
       {/* Pagination */}
-      <div className="flex justify-center mt-8">
+      <div className="flex justify-center mt-12 pb-8">
         <PaginationRounded
           pageNumber={pageNumber + 1}
           pageSize={pageSize}

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { extractTextFromTipTapJSON } from "@/util/ExtractTextFromJson";
 import { User } from "lucide-react";
+import { extractTextFromTipTapJSON } from "@/util/ExtractTextFromJson";
 
 export default function MediaCard({ blog }) {
   const navigate = useNavigate();
@@ -11,17 +11,17 @@ export default function MediaCard({ blog }) {
 
   return (
     <div
-      className="max-w-sm min-w-0 w-full bg-gray-200 border dark:border-white/20
-       border-black/20 dark:bg-white/20 rounded-lg hover:shadow-xl transition-all
-       duration-300 hover:scale-105 cursor-pointer overflow-hidden "
+      className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg 
+        border border-gray-100 dark:border-gray-700 transition-all duration-300 
+        cursor-pointer overflow-hidden flex flex-col"
       onClick={() => navigateReader(blog.id)}
     >
       {/* Blog Cover Image */}
-      <div className="h-44 w-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+      <div className="h-40 w-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
         <img
           src={blog.coverImage}
           alt={blog.title}
-          className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           onError={(e) => {
             e.target.style.display = "none";
             e.target.parentNode.classList.add(
@@ -36,50 +36,53 @@ export default function MediaCard({ blog }) {
       </div>
 
       {/* Blog Content */}
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
+      <div className="p-4 flex-1 flex flex-col">
+        {/* Category Badge */}
+        <div className="mb-2">
+          <span className="inline-block bg-teal-50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 px-2.5 py-0.5 rounded-full text-xs font-medium">
+            {blog.category?.category || "Uncategorized"}
+          </span>
+        </div>
+        
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {blog.title}
         </h3>
-        <p className=" text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 flex-1">
           {extractTextFromTipTapJSON(blog.content)}
         </p>
       </div>
 
       {/* Blog Footer */}
-      <div className="flex justify-between items-center px-4 pb-4">
-        {/* Author Info */}
-        <div className="flex items-center gap-2">
+      <div className="px-4 pb-4 pt-0">
+        <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           {/* Avatar */}
-          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100 dark:ring-gray-700">
             {blog?.user?.photo ? (
               <img
                 src={`${blog.user.photo}`}
                 alt="photo"
-                className="rounded-full object-cover scale-125 w-full h-full"
+                className="w-full h-full object-cover"
               />
             ) : (
-              <User size={32}/>
+              <div className="w-full h-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                <User size={16} className="text-gray-400"/>
+              </div>
             )}
           </div>
 
           {/* Author Details */}
-          <div className="flex flex-col">
-            <p className="text-sm font-medium dark:text-white">
+          <div className="flex flex-col min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {blog.user.name}
             </p>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {new Date(blog.time).toLocaleDateString("en-us", {
-                day: "2-digit",
+                day: "numeric",
                 month: "short",
                 year: "numeric",
               })}
             </p>
           </div>
-        </div>
-
-        {/* Category Badge */}
-        <div className="bg-teal-100 border dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-2 py-1 rounded-full text-xs font-medium">
-          {blog.category?.category || "Uncategorized"}
         </div>
       </div>
     </div>

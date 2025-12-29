@@ -44,13 +44,19 @@ function Dashboard() {
   }, [userInfo?.id, pageSize, page, sortBy, sortOrder]);
 
   return (
-    <div className="p-8 min-h-screen">
-      {/* Recent Blogs Section */}
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-        My Blogs
-      </h2>
+    <div className="px-4 sm:px-6 lg:px-8 py-8 min-h-screen max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          My Blogs
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Manage and view all your published content
+        </p>
+      </div>
 
-      <div className="max-w-lg mx-auto mb-6">
+      {/* Filter */}
+      <div className="mb-8 flex justify-center sm:justify-start">
         <HeaderFilter
           onChangeSortBy={(e) => setSortBy(e.target.value)}
           onChangeSortOrder={(e) => setSortOrder(e.target.value)}
@@ -60,26 +66,34 @@ function Dashboard() {
         />
       </div>
 
-      <div className="min-h-3/4">
-        <div className="w-full grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {myBlogPage &&
-            myBlogPage.content &&
-            myBlogPage.content.map((blog) => (
+      {/* Content */}
+      <div className="min-h-[50vh]">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <LoadingIndicator size={40}/>
+          </div>
+        ) : myBlogPage && myBlogPage.content && myBlogPage.content.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {myBlogPage.content.map((blog) => (
               <MediaCard key={blog.blogId} blog={blog} />
             ))}
-          {loading && <LoadingIndicator size={40}/>}
-        </div>
-
-        {(!myBlogPage || myBlogPage.empty) && !loading && (
-          <p className="text-center mt-8 text-gray-600 dark:text-gray-400 text-base">
-            No blogs found.
-          </p>
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4 opacity-30">📝</div>
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              No blogs yet
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Start writing and share your first blog post!
+            </p>
+          </div>
         )}
       </div>
 
       {/* Pagination */}
-      {!myBlogPage.empty && (
-        <div className="flex justify-center mt-8">
+      {myBlogPage && !myBlogPage.empty && (
+        <div className="flex justify-center mt-12">
           <PaginationRounded
             pageNumber={page + 1}
             pageSize={pageSize}

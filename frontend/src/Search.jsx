@@ -85,83 +85,93 @@ function Search() {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-6 min-h-screen ">
-      <div className="place-items-center">
-        <div className="flex max-w-md lg:max-w-lg w-full gap-2 justify-between items-center px-4 py-2 border rounded-xl">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 min-h-screen max-w-7xl mx-auto">
+      {/* Search Bar */}
+      <div className="flex justify-center">
+        <div className="flex max-w-xl w-full items-center gap-3 px-5 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+          <SearchIcon className="w-5 h-5 text-gray-400" />
           <input
             type="text"
-            className="w-full focus:outline-none"
-            placeholder="Search blogs, users"
+            className="w-full bg-transparent focus:outline-none text-gray-900 dark:text-white placeholder-gray-400"
+            placeholder="Search blogs, users..."
             onChange={(e) => setKeyword(e.target.value)}
             value={keyword}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
-          <i className="cursor-pointer" onClick={() => handleSearch()}>
-            <SearchIcon />
-          </i>
+          <button
+            onClick={() => handleSearch()}
+            className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-full hover:bg-blue-700 transition-colors"
+          >
+            Search
+          </button>
         </div>
       </div>
-      {/* Header Section */}
 
-      <h2 className="text-lg font-medium text-center text-gray-700 dark:text-gray-300 ">
-        Searched {selectedHeaderIdx == 0 ? "blogs" : "users"} for "{keyword}"
-      </h2>
-      <div className="justify-items-center ">
-        <div className="max-w-md lg:max-w-lg w-full ">
-          {/* Sorting  */}
+      {/* Tabs Section */}
+      <div className="flex justify-center">
+        <div className="flex gap-2">
+          {headers.map((header, index) => (
+            <HeaderHomePage
+              key={index}
+              category={header}
+              isSelected={selectedHeaderIdx == index}
+              onClick={() => {
+                setSelectedHeaderIdx(index);
+                setPageNumber(0);
+                setPageSize(ConstBlogPageSize[0]);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Filter & Results Info */}
+      {keyword && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Showing results for <span className="font-semibold text-gray-900 dark:text-white">"{keyword}"</span>
+          </p>
           {selectedHeaderIdx == 0 && (
-            <div className="mb-4">
-              <HeaderFilter
-                onChangeSortBy={(e) => setSortBy(e.target.value)}
-                onChangeSortOrder={(e) => setSortOrder(e.target.value)}
-                sortByItems={sortByBlog}
-                sortByValue={sortBy}
-                sortOrderValue={sortOrder}
-              />
-            </div>
+            <HeaderFilter
+              onChangeSortBy={(e) => setSortBy(e.target.value)}
+              onChangeSortOrder={(e) => setSortOrder(e.target.value)}
+              sortByItems={sortByBlog}
+              sortByValue={sortBy}
+              sortOrderValue={sortOrder}
+            />
           )}
-
-          <div className="flex gap-4 overflow-x-auto">
-            {headers.map((header, index) => (
-              <HeaderHomePage
-                key={index}
-                category={header}
-                isSelected={selectedHeaderIdx == index}
-                onClick={() => {
-                  setSelectedHeaderIdx(index);
-                  setPageNumber(0);
-                  setPageSize(ConstBlogPageSize[0]);
-                }}
-              />
-            ))}
-          </div>
         </div>
-      </div>
+      )}
 
       {/* Content Section */}
-
       <div>
-        {loading && <LoadingIndicator />}
+        {loading && (
+          <div className="flex justify-center py-12">
+            <LoadingIndicator />
+          </div>
+        )}
 
         {!loading && selectedHeaderIdx === 0 && (
           <>
-            {searchedBlogPage ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {searchedBlogPage && searchedBlogPage.content?.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {searchedBlogPage.content.map((element) => (
                   <MediaCard key={element.id} blog={element} />
                 ))}
               </div>
-            ) : (
-              <p className="text-center text-gray-600 dark:text-gray-400 text-base">
-                No blogs found for "{keyword}"
-              </p>
-            )}
+            ) : keyword ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No blogs found</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Try different keywords</p>
+              </div>
+            ) : null}
           </>
         )}
 
         {!loading && selectedHeaderIdx === 1 && (
           <>
-            {userPage ? (
-              <div className="grid xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-3 min-[425px]:grid-cols-2 gap-4">
+            {userPage && userPage.content?.length > 0 ? (
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {userPage.content.map((element) => (
                   <FollowerCard
                     key={element.id}
@@ -170,11 +180,12 @@ function Search() {
                   />
                 ))}
               </div>
-            ) : (
-              <p className="text-center text-gray-600 dark:text-gray-400 text-base">
-                No users found for "{keyword}"
-              </p>
-            )}
+            ) : keyword ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400 text-lg">No users found</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-1">Try different keywords</p>
+              </div>
+            ) : null}
           </>
         )}
       </div>

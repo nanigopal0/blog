@@ -113,158 +113,126 @@ export default function UserDetails() {
     );
   else
     return (
-      <div className="min-h-screen ">
+      <div className="min-h-screen">
         {/* Mobile: Stack vertically, Desktop: Side by side */}
-        <div className="p-4 lg:p-8 flex flex-col lg:flex-row justify-center lg:justify-around gap-4 sm:gap-6 lg:gap-8">
+        <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
           {/* User Profile Section */}
-          <div
-            className="w-full lg:w-auto max-w-sm mx-auto lg:mx-0 flex flex-col justify-center items-center 
-                       border py-4 sm:py-6 px-4 sm:px-8 rounded-2xl 
-                       dark:border-white/10 border-black/20 
-                       dark:bg-white/5 bg-black/10 
-                       h-fit"
-          >
-            {/* Profile Picture & Name */}
-            <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
-              {/* Profile Picture - Responsive sizes */}
-              <div
-                className="border-2 w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 
-                           rounded-full border-gray-400 overflow-hidden 
-                           dark:border-gray-600 p-1 sm:p-2 flex-shrink-0"
-              >
-                {user && user.photo ? (
-                  <img
-                    src={user.photo}
-                    alt={`${user.name}'s profile`}
-                    className="rounded-full w-full h-full object-cover object-top 
-                           hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <UserCircle2 className="w-full h-full text-gray-400" />
-                )}
-              </div>
-
-              {/* User Info */}
-              <div className="flex flex-col gap-2 justify-center items-center sm:items-start">
-                <h2 className="font-bold text-xl sm:text-2xl lg:text-3xl text-center sm:text-left">
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 sticky top-24">
+              {/* Profile Picture & Name */}
+              <div className="text-center mb-6">
+                <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-4 ring-blue-100 dark:ring-blue-900">
+                  {user && user.photo ? (
+                    <img
+                      src={user.photo}
+                      alt={`${user.name}'s profile`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <UserCircle2 className="w-16 h-16 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <h2 className="font-bold text-xl text-gray-900 dark:text-white">
                   {user?.name}
                 </h2>
-                <h5 className="text-blue-500 cursor-pointer hover:underline text-sm sm:text-base">
-                  @{user?.username}
-                </h5>
+                <p className="text-blue-500 text-sm">@{user?.username}</p>
               </div>
+
+              {/* Follow Button */}
+              {userInfo.id != param.id && (
+                <button
+                  className={`w-full mb-6 px-4 py-2.5 font-medium rounded-xl transition-colors cursor-pointer ${
+                    isFollow
+                      ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                  onClick={isFollow ? handleUnfollowClick : handleFollowClick}
+                >
+                  {isFollow ? "Following" : "Follow"}
+                </button>
+              )}
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-2 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl mb-4">
+                <button
+                  onClick={() => setDisplayFollowers(true)}
+                  className="text-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                >
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{user?.totalFollowers || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Followers</p>
+                </button>
+                <button
+                  onClick={() => setDisplayFollowings(true)}
+                  className="text-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                >
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{user?.totalFollowings || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Following</p>
+                </button>
+                <div className="text-center p-2">
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{user?.totalBlogs || 0}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Blogs</p>
+                </div>
+              </div>
+
+              {displayFollowers && (
+                <FollowerListDialog
+                  onClose={() => setDisplayFollowers(false)}
+                  userId={param.id}
+                  isFollowers={true}
+                  open={displayFollowers}
+                />
+              )}
+              {displayFollowings && (
+                <FollowerListDialog
+                  onClose={() => setDisplayFollowings(false)}
+                  userId={param.id}
+                  isFollowers={false}
+                  open={displayFollowings}
+                />
+              )}
             </div>
-
-            <button
-              hidden={userInfo.id == param.id}
-              className="mb-4 w-full px-4 sm:px-6 py-2  bg-blue-500 text-white 
-                       cursor-pointer font-medium rounded-full border-none 
-                       hover:bg-blue-600 transition-colors "
-              onClick={isFollow ? handleUnfollowClick : handleFollowClick}
-            >
-              {isFollow ? "Unfollow" : "Follow"}
-            </button>
-
-            {/* Following/Followers - Stack on mobile, side by side on larger screens */}
-            <div className="gap-2">
-              <button
-                onClick={() => setDisplayFollowers(true)}
-                className="p-2 text-blue-500 dark:text-blue-400 cursor-pointer place-self-start
-                               font-medium rounded-full border-none text-sm
-                               hover:dark:bg-blue-500/30 hover:bg-blue-200 transition-colors"
-              >
-                {user?.totalFollowers || 0} followers
-              </button>
-              <button
-                onClick={() => setDisplayFollowings(true)}
-                className="p-2 text-blue-500 dark:text-blue-400 cursor-pointer 
-                               font-medium rounded-full border-none text-sm
-                               hover:dark:bg-blue-500/30 hover:bg-blue-200 transition-colors"
-              >
-                {user?.totalFollowings || 0} followings
-              </button>
-            </div>
-
-            {displayFollowers && (
-              <FollowerListDialog
-                onClose={() => setDisplayFollowers(false)}
-                userId={param.id}
-                isFollowers={true}
-                open={displayFollowers}
-              />
-            )}
-            {displayFollowings && (
-              <FollowerListDialog
-                onClose={() => setDisplayFollowings(false)}
-                userId={param.id}
-                isFollowers={false}
-                open={displayFollowings}
-              />
-            )}
-
-            {/* Blogs Count */}
-            <p
-              className="w-full py-2 dark:text-gray-300 text-gray-600
-                      font-medium text-sm sm:text-base"
-            >
-              Total blogs {user?.totalBlogs || 0}
-            </p>
           </div>
 
           {/* Blogs Section */}
-          <div
-            className="flex-1 min-h-96 border rounded-2xl overflow-hidden 
-                       dark:border-white/10 border-black/20 
-                       dark:bg-white/5 bg-black/10"
-          >
-            {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-gray-300 dark:border-gray-600">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl text-center font-bold">
-                Blogs
+          <div className="flex-1">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Blogs by {user?.name}
               </h2>
             </div>
 
-            {/* Content Area with Scroll */}
-            <div className="p-2 sm:p-4 lg:p-6 h-[calc(100vh-300px)] sm:h-[calc(100vh-320px)] lg:h-[calc(100vh-200px)] overflow-y-auto">
-              {/* Blog Grid - Responsive columns */}
-              <div
-                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 
-                           gap-4 sm:gap-4 lg:gap-6 justify-items-center "
-              >
-                {blog?.content?.map((blogItem, index) => (
-                  <MediaCard key={blogItem.id || index} blog={blogItem} />
-                ))}
-              </div>
-
-              {/* No Blogs Message */}
-              {blog?.content?.length === 0 && (
-                <div className="flex h-64 sm:h-96 justify-center items-center">
-                  <div className="text-center">
-                    <div className="text-4xl sm:text-6xl mb-4 opacity-20">
-                      📝
-                    </div>
-                    <h3 className="text-base sm:text-lg lg:text-xl text-gray-500 dark:text-gray-400">
-                      No blogs posted yet
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-400 dark:text-gray-500 mt-2">
-                      This user hasn't shared any stories yet.
-                    </p>
-                  </div>
+            {/* Blog Grid */}
+            {blog?.content?.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {blog.content.map((blogItem, index) => (
+                    <MediaCard key={blogItem.id || index} blog={blogItem} />
+                  ))}
                 </div>
-              )}
-            </div>
 
-            {/* Pagination - Fixed at bottom */}
-            {blog?.content?.length > 0 && (
-              <div className=" m-4 place-self-center">
-                <PaginationRounded
-                  isLastPage={blog.last}
-                  onChangePage={fetchUserBlogs}
-                  pageNumber={blog.number + 1 || 0}
-                  pageSize={blog.size || ConstBlogPageSize[0]}
-                  totalElements={blog.totalElements}
-                  totalPages={blog.totalPages}
-                />
+                {/* Pagination */}
+                <div className="mt-8 flex justify-center">
+                  <PaginationRounded
+                    isLastPage={blog.last}
+                    onChangePage={fetchUserBlogs}
+                    pageNumber={blog.number + 1 || 0}
+                    pageSize={blog.size || ConstBlogPageSize[0]}
+                    totalElements={blog.totalElements}
+                    totalPages={blog.totalPages}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+                <div className="text-6xl mb-4 opacity-30">📝</div>
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  No blogs posted yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400">
+                  This user hasn't shared any stories yet.
+                </p>
               </div>
             )}
           </div>

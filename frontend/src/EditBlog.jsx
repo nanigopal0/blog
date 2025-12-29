@@ -2,13 +2,13 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { uploadImage } from "./util/UploadImageCloudinary";
 import { AuthContext } from "./contexts/AuthContext";
-import { SimpleEditor } from "./components/tiptap-templates/simple/simple-editor";
 import PreviewPost from "./components/PreviewPost";
 import LoadingIndicator from "./components/LoadingIndicator";
 import { getCategoriesFromServer } from "./util/LoadCategory";
 import apiErrorHandle from "./util/APIErrorHandle";
 import { getBlogById, updateBlogById } from "./util/BlogUtil";
 import toast from "react-hot-toast";
+import CustomEditor from "./components/tiptap/CustomEditor";
 
 function EditBlog() {
   const [image, setImage] = useState(null);
@@ -24,8 +24,8 @@ function EditBlog() {
   const { logout, removeCreds } = useContext(AuthContext);
   const [blog, setBlog] = useState({});
   const param = useParams();
-  const [editor, setEditor] = useState(null);
   const [previewPost, setPreviewPost] = useState(false);
+  const editorRef = useRef(null);
 
   useEffect(() => {
     fetchCategories();
@@ -35,6 +35,12 @@ function EditBlog() {
   useEffect(() => {
     setCategoryIndex(blog?.category?.id);
   }, [categories, blog]);
+
+  useEffect(()=>{
+    if (blog && editorRef.current) {
+      editorRef.current.commands.setContent(JSON.parse(blog.content));
+    }
+  },[blog,editorRef])
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -58,6 +64,7 @@ function EditBlog() {
     setLoading(true);
     try {
       const result = await getBlogById(param.id);
+      
       setBlog(result);
       setImage(result.coverImage);
       setPreviewImage(result.coverImage);
@@ -68,6 +75,11 @@ function EditBlog() {
     } finally {
       if (categories.length > 1) setLoading(false);
     }
+  };
+
+ const initRef = (editorInstance) => {
+    console.log(editorInstance)
+    editorRef.current = editorInstance;
   };
 
   const handleEditBlogBtn = async () => {
@@ -89,7 +101,7 @@ function EditBlog() {
         id: blog.id,
         coverImage: coverImageUrl,
         title: blogTitle,
-        content: JSON.stringify(editor.getJSON()),
+        content: JSON.stringify(editorRef.current.getJSON()),
       };
       if (data.content && data.coverImage && data.title) {
         updateBlogBackend(data);
@@ -122,13 +134,13 @@ function EditBlog() {
         <LoadingIndicator size={40} />
       </div>
     );
-  else
+  
     return (
       <div className="m-4 flex flex-col items-center min-h-screen ">
         {previewPost && (
           <PreviewPost
             onClose={() => setPreviewPost(false)}
-            jsonPost={editor.getJSON()}
+            jsonPost={editorRef.current.getJSON()}
           />
         )}
         {/* Cover Image Input */}
@@ -207,10 +219,7 @@ function EditBlog() {
           </h3>
 
           {blog && blog.content && (
-            <SimpleEditor
-              onActivate={setEditor}
-              initialContent={JSON.parse(blog.content)}
-            />
+            <CustomEditor init={initRef} />
           )}
         </div>
 

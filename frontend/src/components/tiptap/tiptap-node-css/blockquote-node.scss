@@ -1,0 +1,26 @@
+/* =====================
+   BLOCKQUOTE
+   ===================== */
+.tiptap blockquote {
+  position: relative;
+  padding-left: 1.25em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin: 1.5rem 0;
+  border-left: 4px solid #7c3aed;
+  background-color: #f8f5ff;
+  border-radius: 0 8px 8px 0;
+  color: #4b5563;
+  font-style: italic;
+
+  p {
+    margin: 0;
+  }
+}
+
+/* Dark mode support */
+.dark .tiptap blockquote {
+  background-color: #1e1b4b;
+  border-left-color: #a78bfa;
+  color: #e5e7eb;
+}

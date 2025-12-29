@@ -1,0 +1,43 @@
+/* TipTap Editor Link Styles */
+.tiptap a {
+  color: #7c3aed;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.tiptap a:hover {
+  color: #5b21b6;
+  text-decoration-color: #5b21b6;
+}
+
+.tiptap a:visited {
+  color: #6d28d9;
+}
+
+/* Dark mode link styles */
+.dark .tiptap a {
+  color: #a78bfa;
+}
+
+.dark .tiptap a:hover {
+  color: #c4b5fd;
+  text-decoration-color: #c4b5fd;
+}
+
+.dark .tiptap a:visited {
+  color: #a78bfa;
+}
+
+/* Link with selection highlight */
+.tiptap a.ProseMirror-selectednode {
+  background-color: #ede9fe;
+  border-radius: 2px;
+  outline: 2px solid #a78bfa;
+  outline-offset: 1px;
+}
+
+.dark .tiptap a.ProseMirror-selectednode {
+  background-color: #4c1d95;
+}

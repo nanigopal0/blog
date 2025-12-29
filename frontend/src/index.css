@@ -5,7 +5,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+.tiptap {
+    outline-style: none;
+}
 
 
-@import './styles/_variables.scss';
-@import './styles/_keyframe-animations.scss';
+

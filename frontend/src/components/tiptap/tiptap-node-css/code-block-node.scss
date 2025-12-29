@@ -1,0 +1,50 @@
+/* =====================
+   CODE FORMATTING
+   ===================== */
+
+/* Inline code */
+.tiptap code {
+  background-color: #e9eaec;
+  color: #322f30;
+  border: 1px solid #b5b6b8;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  line-height: 1.4;
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+}
+
+/* Code blocks */
+.tiptap pre {
+  background-color: #1e1e2e;
+  color: #dce1f1;
+  border: 1px solid #313244;
+  margin: 1.5em 0;
+  padding: 1em;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.tiptap pre code {
+  background-color: transparent;
+  color: inherit;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Dark mode support */
+.dark .tiptap code {
+  background-color: #374151;
+  color: #c5bec2;
+  border-color: #4b5563;
+}
+
+.dark .tiptap pre {
+  background-color: #0d1117;
+  border-color: #21262d;
+  
+}

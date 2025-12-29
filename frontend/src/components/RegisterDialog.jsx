@@ -102,7 +102,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
       <div>
         {loading && <LoadingIndicator />}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 ">
           {isRegisterSuccess && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
               Successfully registered! Verify your email to login.
@@ -202,7 +202,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium  mb-1"
+              className="block text-sm font-medium mb-1"
             >
               Confirm Password
             </label>
@@ -236,7 +236,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
           </div>
 
           {/* Terms and Conditions */}
-          <p className="text-sm text-gray-700 dark:text-gray-400 mt-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mt-4">
             By signing up, you agree to our{" "}
             <span className="font-semibold">Terms of Service</span> and{" "}
             <span className="font-semibold">Privacy Policy</span>.
@@ -259,7 +259,7 @@ export default function RegisterDialog({ open, onClose, onChangeLogin }) {
           </button>
 
           {/* Login Section */}
-          <p className="text-center text-sm text-gray-700 dark:text-gray-400 mt-4 mb-0">
+          <p className="text-center text-sm text-gray-700 dark:text-gray-300 mt-4 mb-0">
             Already have an account?{" "}
             <button
               type="button"

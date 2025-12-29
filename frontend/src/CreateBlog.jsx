@@ -2,13 +2,14 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadImage } from "./util/UploadImageCloudinary";
 import { AuthContext } from "./contexts/AuthContext";
-import { SimpleEditor } from "./components/tiptap-templates/simple/simple-editor";
+
 import PreviewPost from "./components/PreviewPost";
 import LoadingIndicator from "./components/LoadingIndicator";
 import { getCategoriesFromServer } from "./util/LoadCategory";
 import apiErrorHandle from "./util/APIErrorHandle";
 import { postBlog } from "./util/BlogUtil";
 import toast from "react-hot-toast";
+import CustomEditor from "./components/tiptap/CustomEditor";
 
 function CreateBlog() {
   const [image, setImage] = useState(null);
@@ -22,8 +23,8 @@ function CreateBlog() {
     { id: 0, category: "Choose a category" },
   ]);
   const { userInfo, removeCreds } = useContext(AuthContext);
-  const [editor, setEditor] = useState(null);
   const [previewPost, setPreviewPost] = useState(false);
+  const editorRef = useRef(null);
 
   useEffect(() => {
     fetchCategories();
@@ -53,7 +54,7 @@ function CreateBlog() {
       const data = {
         coverImage: coverImageUrl,
         title: blogTitle,
-        content: JSON.stringify(editor.getJSON()),
+        content: JSON.stringify(editorRef.current.getJSON()),
         userId: userInfo.id,
         categoryId: categories[selectedCategoryIdx].id,
       };
@@ -82,6 +83,10 @@ function CreateBlog() {
     coverImageInputRef.current.click();
   };
 
+   const initRef = (editorInstance) => {
+    editorRef.current = editorInstance;
+  };
+
   if (loading)
     return (
       <div className="w-full h-screen flex justify-center items-center">
@@ -94,8 +99,9 @@ function CreateBlog() {
         {previewPost && (
           <PreviewPost
             onClose={() => setPreviewPost(false)}
-            jsonPost={editor.getJSON()}
+            jsonPost={editorRef.current.getJSON()}
           />
+         
         )}
         {/* Cover Image Input */}
         <div
@@ -166,11 +172,8 @@ function CreateBlog() {
         {/* Blog Content */}
         <div className="w-full lg:max-w-4/5 mb-8">
           <h3 className="text-lg font-semibold mb-4">Content</h3>
-          <div className="p-1 w-full rounded-2xl border border-black/20 dark:border-white/20 shadow-lg overflow-hidden">
-            <SimpleEditor
-              onActivate={setEditor}
-              initialContent={"Start typing..."}
-            />
+          <div className="w-full  overflow-hidden">
+           <CustomEditor init={initRef} />
           </div>
         </div>
 

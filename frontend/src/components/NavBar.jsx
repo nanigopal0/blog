@@ -48,71 +48,68 @@ export default function NavBar() {
 
   const authenticatedNavBarTabs = (
     <>
-      <i
+      <button
         onClick={searchClick}
-        className="hidden md:block p-2 hover:border rounded-full border-black/20 dark:border-white/20 hover:bg-black/20 hover:dark:bg-white/20 cursor-pointer"
+        className="hidden md:flex p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
-        <SearchIcon className="text-center" />
-      </i>
+        <SearchIcon className="w-5 h-5" />
+      </button>
 
-      <div
+      <button
         onClick={searchClick}
-        className={`${
-          darkMode ? "hover:bg-white/20" : "hover:bg-black/20"
-        } rounded-lg p-2 text-lg cursor-pointer my-2 md:hidden
-        `}
+        className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg md:hidden"
       >
         Search
-      </div>
+      </button>
 
       {tabs.map((tab, index) => (
         <button
           key={index}
-          className={`${
-            darkMode ? "hover:bg-white/20" : "hover:bg-black/20"
-          } rounded-lg p-2 text-lg cursor-pointer my-2
-        ${
-          isActive(tab.path) &&
-          `${darkMode ? "bg-white/20" : "bg-black/20"} border border-black/20 `
-        }`}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors
+            ${isActive(tab.path)
+              ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+              : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+            }
+            md:inline-block w-full md:w-auto text-left md:text-center
+          `}
           onClick={tab.onClick}
         >
           {tab.name}
         </button>
       ))}
 
-      <i
+      <button
         onClick={logout}
-        className="hidden md:block rounded-full text-orange-500 dark:text-orange-400 hover:text-orange-700 cursor-pointer"
+        className="hidden md:flex p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
       >
-        <LogOut />
-      </i>
-      <div
+        <LogOut className="w-5 h-5" />
+      </button>
+      <button
         onClick={logout}
-        className="md:hidden text-lg cursor-pointer hover:text-white hover:bg-orange-400 p-2 rounded-lg"
+        className="md:hidden w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
       >
         Logout
-      </div>
+      </button>
     </>
   );
 
   const unauthenticatedNavBarTabs = (
     <button
       onClick={aboutClick}
-      className={`${
-        darkMode ? "hover:bg-white/20" : "hover:bg-black/20"
-      }  text-xl cursor-pointer rounded-lg p-2 lg:mx-4 md:mx-3 ${
-        isActive("/about") &&
-        `${darkMode ? "bg-white/20" : "bg-black/20"} border border-black/20 `
-      }`}
+      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors
+        ${isActive("/about")
+          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+          : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+        }
+      `}
     >
       About
     </button>
   );
 
   return (
-    <nav className="w-full p-4 flex justify-between items-center ">
-      <p className="text-2xl font-bold cursor-pointer" onClick={homepageClick}>
+    <nav className="w-full px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center  dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800 sticky top-0 z-40">
+      <p className="text-2xl font-bold cursor-pointer bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" onClick={homepageClick}>
         Blogify
       </p>
 
@@ -122,18 +119,18 @@ export default function NavBar() {
       <div className="flex md:hidden">
         <div className="gap-4 flex items-center">
           <ToggleThemeIcon darkMode={darkMode} toggleTheme={toggleTheme} />
-          <i className="cursor-pointer" onClick={toggleMobileMenu}>
+          <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={toggleMobileMenu}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </i>
+          </button>
         </div>
 
         {isMobileMenuOpen && (
           <div
-            className="absolute top-14 z-50 right-4 w-2/5 py-8 bg-gray-300/60 backdrop-blur-xs border border-black/30 dark:border-white/30
-           dark:bg-gray-700/80 rounded-md items-center justify-center flex shadow-2xl shadow-gray-700/30 dark:shadow-gray-400/30"
+            className="absolute top-16 right-4 w-56 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+              rounded-xl shadow-xl flex flex-col"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <div className="w-2/3 gap-y-5 flex flex-col items-center">
+            <div className="flex flex-col px-2">
               {isAuthenticated ? (
                 authenticatedNavBarTabs
               ) : (
@@ -148,7 +145,7 @@ export default function NavBar() {
       </div>
 
       {/* Large screen >= 768px */}
-      <div className="hidden gap-3 lg:gap-6 items-center md:flex">
+      <div className="hidden gap-2 lg:gap-4 items-center md:flex">
         {isAuthenticated ? (
           authenticatedNavBarTabs
         ) : (
@@ -165,21 +162,19 @@ export default function NavBar() {
 
 export function ToggleThemeIcon({ darkMode, toggleTheme }) {
   return (
-    <i className="cursor-pointer" onClick={toggleTheme}>
-      {darkMode ? <Sun size={24} /> : <Moon size={24} />}
-    </i>
+    <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onClick={toggleTheme}>
+      {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+    </button>
   );
 }
 
 export function LoginBtn({ openLoginDialog }) {
   return (
-    <div onClick={openLoginDialog}>
-      <button
-        className="text-xl cursor-pointer font-medium hover:underline
-        text-blue-700 dark:text-blue-500 my-2 md:mx-3 lg:mx-4"
-      >
-        Login
-      </button>
-    </div>
+    <button
+      onClick={openLoginDialog}
+      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+    >
+      Login
+    </button>
   );
 }

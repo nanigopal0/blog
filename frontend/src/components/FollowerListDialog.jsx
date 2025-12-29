@@ -46,7 +46,7 @@ export default function FollowerListDialog({
       {loading ? (
         <LoadingIndicator />
       ) : (
-        <div className="overflow-auto gap-4 flex flex-col">
+        <div className="overflow-auto gap-4 flex flex-col ">
           {followers &&
             followers.content.map((follower) => (
               <FollowerCard

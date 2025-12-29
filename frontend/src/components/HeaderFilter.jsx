@@ -6,35 +6,32 @@ export default function HeaderFilter({
   sortOrderValue,
 }) {
   return (
-    <div
-      className=" border border-black/20 dark:border-white/20 p-2 rounded-lg dark:bg-gray-800
-     bg-gray-100 flex justify-between gap-6 items-center text-gray-800 dark:text-gray-300"
-    >
-      <div>
-        <label className="me-2 text-sm">Sort by</label>
+    <div className="flex flex-wrap justify-center gap-4 items-center text-gray-700 dark:text-gray-300">
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium">Sort by</label>
         <select
           onChange={onChangeSortBy}
           value={sortByValue}
-          className=" border border-black/50 dark:border-white/40 p-1 rounded-full text-sm bg-gray-200 dark:bg-gray-800 "
+          className="border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
         >
           {sortByItems &&
             sortByItems.map((item, index) => (
               <option key={index} value={item}>
-                {item.toLocaleUpperCase()}
+                {item.charAt(0).toUpperCase() + item.slice(1)}
               </option>
             ))}
         </select>
       </div>
 
-      <div className="text-right">
-        <label className="me-2 text-sm">Sort order</label>
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium">Order</label>
         <select
           onChange={onChangeSortOrder}
           value={sortOrderValue}
-          className="border p-1 border-black/50 dark:border-white/40 rounded-full text-sm bg-gray-200 dark:bg-gray-800 "
+          className="border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
         >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
+          <option value="desc">Newest first</option>
+          <option value="asc">Oldest first</option>
         </select>
       </div>
     </div>

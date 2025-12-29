@@ -6,22 +6,17 @@ import { AuthContext } from "./contexts/AuthContext";
 import Comment from "./components/Comment";
 
 import FormatDate from "./util/FormatDate";
-import {
-  Heart,
-  MessageCircle,
-  X,
-  User,
-} from "lucide-react";
-import TipTapRenderer from "./util/TipTapRenderer";
+import { Heart, MessageCircle, X, User } from "lucide-react";
 import axios from "axios";
 import apiErrorHandle from "./util/APIErrorHandle";
 import { deleteBlogById, getBlogById } from "./util/BlogUtil";
 import toast from "react-hot-toast";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { tiptapEditorExtension } from "./components/tiptap/TiptapEditorExtension";
 
 function BlogReader() {
   const param = useParams();
   const navigate = useNavigate();
-
   const [blog, setBlog] = useState([]);
   const [loading, setLoading] = useState(true);
   const { userInfo, removeCreds } = useContext(AuthContext);
@@ -32,9 +27,22 @@ function BlogReader() {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
+  const editor = useEditor({
+    editable: false,
+    extensions: tiptapEditorExtension,
+    content: "Loading...",
+  });
+
   useEffect(() => {
     fetchBlog();
   }, []);
+
+  // Set editor content when both editor and blog data are ready
+  useEffect(() => {
+    if (editor && blog?.content) {
+      editor.commands.setContent(JSON.parse(blog.content));
+    }
+  }, [editor, blog]);
 
   const fetchBlog = async () => {
     setLoading(true);
@@ -43,9 +51,7 @@ function BlogReader() {
       setVariables(response);
     } catch (error) {
       const retry = await apiErrorHandle(error, removeCreds);
-      if (retry) 
-        fetchBlog();
-      
+      if (retry) fetchBlog();
     } finally {
       setLoading(false);
     }
@@ -139,7 +145,7 @@ function BlogReader() {
     } catch (error) {
       const retry = await apiErrorHandle(error, removeCreds);
       if (retry) handlePostComment();
-    }finally{
+    } finally {
       toast.dismiss(loadingId);
     }
   };
@@ -170,88 +176,89 @@ function BlogReader() {
     );
   else
     return (
-      <div className="p-4 sm:p-6 md:p-10 flex justify-center items-center min-h-screen ">
+      <div className="flex justify-center items-center min-h-screen">
         {blog && (
-          <div className="w-full sm:w-11/12 md:w-4/5 lg:w-3/4 p-4 sm:p-6 md:p-8 rounded-lg">
-            {/* Blog Cover Image */}
-            <div className="flex justify-center mb-4 sm:mb-6 md:mb-8 overflow-hidden rounded-2xl">
+          <div className="w-full max-w-4xl">
+            {/* Blog Cover Image - Hero */}
+            <div className="w-full mb-6 sm:mb-8 overflow-hidden">
               <img
                 src={blog.coverImage}
                 alt="cover"
-                className="w-full max-h-96 object-contain rounded-2xl"
+                className="w-full max-h-[500px] object-cover rounded-none sm:rounded-2xl"
               />
             </div>
 
-            {/* Blog Author Info */}
-            <div className="flex items-center mb-4 sm:mb-6">
-              <div
-                onClick={handleUserClick}
-                className="w-10 h-10 sm:w-14 sm:h-14 mr-4 rounded-full overflow-hidden border cursor-pointer border-gray-300 flex items-center justify-center "
-              >
-                {blog.userPhoto ? (
-                  <img
-                    src={blog.userPhoto}
-                    alt={blog.userFullName}
-                    className="w-full h-full object-cover"
+            <div className="px-4 sm:px-6 md:px-8">
+              {/* Blog Category */}
+              <div className="mb-3">
+                <span className="inline-block bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 px-3 py-1 rounded-full text-sm font-medium">
+                  {blog.category?.category || "Uncategorized"}
+                </span>
+              </div>
+
+              {/* Blog Title */}
+              <h1 className="font-bold mb-4 sm:mb-6 text-left text-3xl sm:text-4xl md:text-5xl leading-tight">
+                {blog.title}
+              </h1>
+
+              {/* Blog Author Info & Date - Inline */}
+              <div className="flex items-center mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200 dark:border-gray-700">
+                <div
+                  onClick={handleUserClick}
+                  className="w-12 h-12 mr-4 rounded-full overflow-hidden border-2 cursor-pointer border-gray-200 dark:border-gray-600 flex items-center justify-center flex-shrink-0"
+                >
+                  {blog.userPhoto ? (
+                    <img
+                      src={blog.userPhoto}
+                      alt={blog.userFullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-6 h-6 text-gray-500" />
+                  )}
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <h3
+                    className="font-semibold cursor-pointer text-base sm:text-lg hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    onClick={handleUserClick}
+                  >
+                    {blog.userFullName}
+                  </h3>
+                  <span className="hidden sm:inline text-gray-400">•</span>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+                    {FormatDate(blog.time)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Blog Content */}
+              <div className="mb-6 sm:mb-8 text-base sm:text-lg leading-relaxed prose prose-lg max-w-none dark:prose-invert">
+                {blog && (
+                  <EditorContent
+                    editor={editor}
+                    className="tiptap p-0 text-slate-800 dark:text-slate-100"
                   />
-                ) : (
-                  <User className="w-full h-full sm:w-7 sm:h-7 text-gray-500" />
                 )}
               </div>
-              <div>
-                <h3
-                  className="font-bold cursor-pointer text-base sm:text-xl "
-                  onClick={handleUserClick}
-                >
-                  {blog.userFullName}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
-                  {FormatDate(blog.time)}
-                </p>
-              </div>
-            </div>
 
-            {/* Blog Title */}
-            <h1 className="font-bold mb-2 sm:mb-4 text-left text-2xl sm:text-4xl ">
-              {blog.title}
-            </h1>
+              <hr className="mb-4 sm:mb-6 border-gray-200 dark:border-gray-700" />
 
-            {/* Blog Category */}
-            <div className="mb-4 sm:mb-6">
-              <span className="inline-block bg-teal-50 text-teal-700 px-3 py-1 rounded-full text-sm font-bold">
-                {blog.category?.category || "Uncategorized"}
-              </span>
-            </div>
-
-            {/* Blog Content */}
-            <div
-              className="text-justify mb-4 sm:mb-8 text-sm sm:text-base  prose prose-sm sm:prose max-w-none "
-              // dangerouslySetInnerHTML={{ __html: blog.content }}
-            >
-              {blog && <TipTapRenderer content={blog.content} />}
-            </div>
-
-            <hr className="mb-4 sm:mb-6 border-gray-600" />
-
-            {/* Icons Section */}
-            <div className="flex items-center justify-start gap-2 sm:gap-4 mb-4 sm:mb-6">
+              {/* Icons Section */}
+              <div className="flex items-center justify-start gap-2 sm:gap-4 mb-4 sm:mb-6">
               {/* Heart Icon with Like Count */}
               <div
-                className="flex items-center border border-gray-600 dark:border-gray-400 rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
-            cursor-pointer hover:bg-gray-50 hover:dark:bg-gray-800 transition-colors"
+                onClick={handleReaction}
+                className="flex items-center rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
+             transition-colors cursor-pointer hover:bg-slate-300 hover:dark:bg-gray-600"
               >
-                <button
-                  onClick={handleReaction}
-                  className="p-0 focus:outline-none"
-                >
-                  <Heart
-                    className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                      isHeartClicked
-                        ? "text-red-500 fill-red-500"
-                        : "text-gray-700 dark:text-gray-300"
-                    } hover:text-red-500 transition-colors`}
-                  />
-                </button>
+                <Heart
+                  className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                    isHeartClicked
+                      ? "text-red-500 fill-red-500"
+                      : "text-gray-700 dark:text-gray-300"
+                  } hover:text-red-500 transition-colors`}
+                />
+
                 <span className="font-bold text-sm sm:text-base text-gray-700 dark:text-gray-300">
                   {totalLikes || 0}
                 </span>
@@ -259,8 +266,8 @@ function BlogReader() {
 
               {/* Comment Icon with Comment Count */}
               <div
-                className="flex items-center border border-gray-600 dark:border-gray-400 rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
-              cursor-pointer hover:bg-gray-50 hover:dark:bg-gray-800 transition-colors"
+                className="flex items-center rounded-full px-2 py-1 sm:px-3 sm:py-2 gap-2 
+              cursor-pointer hover:bg-slate-300 hover:dark:bg-gray-600 transition-colors"
                 onClick={() =>
                   setIsCommentSectionVisible(!isCommentSectionVisible)
                 }
@@ -333,6 +340,7 @@ function BlogReader() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
       </div>

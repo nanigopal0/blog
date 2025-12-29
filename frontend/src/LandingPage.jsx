@@ -66,55 +66,71 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="my-8 p-4">
+    <div className="min-h-screen">
       {showRegister && <Register onClose={() => setShowRegister(false)} />}
-      <div className="sm:max-w-md lg:max-w-4xl text-center mx-auto p-4">
-        <p className="font-bold text-4xl mb-2">Welcome to Blogify</p>
-        <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
+      
+      {/* Hero Section */}
+      <div className="px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center max-w-4xl mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Welcome to Blogify
+        </h1>
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-10 max-w-2xl mx-auto">
           Share your thoughts, connect with others, and explore amazing blogs
           from around the world.
         </p>
+        <button
+          className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full text-lg transition-all hover:shadow-lg hover:shadow-blue-500/30 cursor-pointer"
+          onClick={() => setShowRegister(true)}
+        >
+          Get Started Free
+        </button>
       </div>
 
-      <div className="my-8">
-        <p className="text-2xl mb-2 font-bold text-center text-teal-700 dark:text-teal-500">
-          Why Choose Blogify?
-        </p>
-        <p className="text-center text-lg mb-8">
-          Discover the features that make Blogify the best platform for
-          bloggers.
-        </p>
+      {/* Features Section */}
+      <div className="px-4 sm:px-6 lg:px-8 py-16 bg-gradient-to-b from-blue-100 via-pink-100 to-blue-100 dark:bg-gradient-to-br dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4 text-gray-900 dark:text-white">
+            Why Choose Blogify?
+          </h2>
+          <p className="text-center text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto">
+            Discover the features that make Blogify the best platform for bloggers.
+          </p>
 
-        <div className="justify-center sm:grid-cols-1 md:grid-cols-2 mx-auto lg:grid-cols-3 grid gap-8">
-          {featureCards.map((card, index) => (
-            <div
-              key={index}
-              className="text-center border border-black/20 bg-black/20 dark:border-white/10 dark:bg-white/20 rounded-2xl md:mx-auto p-6 hover:scale-105 "
-            >
-              <div>
-                <p className="text-lg font-medium mb-2">{card.title}</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featureCards.map((card, index) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-700"
+              >
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-xl flex items-center justify-center mb-5">
+                  <span className="text-2xl">{index === 0 ? '✍️' : index === 1 ? '🤝' : '✨'}</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-gray-900 dark:text-white">{card.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400">
                   {card.description}
                 </p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex my-8 flex-col items-center">
-        <p className="text-xl mb-2 font-medium">
-          Ready to Start Your Blogging Journey?
-        </p>
-        <p className="text-sm mb-8">
-          Join Blogify today and share your voice with the world.
-        </p>
-        <button
-          className="cursor-pointer hover:bg-violet-500 backdrop-blur-2xl rounded-lg font-medium bg-violet-600 p-3 text-white"
-          onClick={() => setShowRegister(true)}
-        >
-          Get Started
-        </button>
+      {/* CTA Section */}
+      <div className="px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+            Ready to Start Your Blogging Journey?
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
+            Join Blogify today and share your voice with the world.
+          </p>
+          <button
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-full transition-all cursor-pointer"
+            onClick={() => setShowRegister(true)}
+          >
+            Create Your Account
+          </button>
+        </div>
       </div>
     </div>
   );

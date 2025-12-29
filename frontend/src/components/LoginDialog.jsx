@@ -124,7 +124,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           )}
 
           <input
-            className="mx-auto w-full border p-2 my-6 border-gray-400 rounded-lg"
+            className="mx-auto w-full border p-2 my-6 border-gray-400 rounded-lg  "
             onChange={handleEmailChange}
             id="email"
             name="email"
@@ -134,7 +134,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           />
 
           <input
-            className="mx-auto w-full border border-gray-400 rounded-lg mb-4 p-2"
+            className="mx-auto w-full border border-gray-400 rounded-lg mb-4 p-2 "
             required
             id="password"
             name="password"
@@ -155,7 +155,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           </div>
 
           {/* Terms and Conditions */}
-          <p className="text-left text-sm mt-2">
+          <p className="text-left text-sm mt-2 ">
             By signing in, you agree to our <strong>Terms of Service</strong>{" "}
             and <strong>Privacy Policy</strong>.
           </p>
@@ -171,7 +171,7 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
         </form>
 
         {/* Register Section */}
-        <p className="mt-2 mb-4 text-center">
+        <p className="mt-2 mb-4 text-center ">
           Don't have an account?{" "}
           <button
             type="button"
@@ -182,13 +182,13 @@ export default function LoginDialog({ open, onClose, onChangeRegister }) {
           </button>
         </p>
 
-        <p className="text-center text-sm">Or continue with</p>
+        <p className="text-center text-sm ">Or continue with</p>
 
         <div className="text-center mb-2 flex justify-center items-center gap-2 mt-4">
           <button
             type="button"
             onClick={googleSignIn}
-            className="flex items-center justify-center w-full p-2 bg-blue-600/10  rounded-lg cursor-pointer "
+            className="flex items-center  justify-center w-full p-2 bg-blue-600/10  rounded-lg cursor-pointer "
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path
