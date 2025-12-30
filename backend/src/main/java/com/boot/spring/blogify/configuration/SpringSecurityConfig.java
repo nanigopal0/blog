@@ -48,10 +48,10 @@ public class SpringSecurityConfig {
                 cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(registry ->
-                        registry.requestMatchers("/public/**", "/admin/login").permitAll()
+                        registry.requestMatchers("/public/**", "/admin/login", "/actuator/health").permitAll()
                                 .requestMatchers("/user/get-oauth2", "/comment/**", "/blog/reaction/**",
                                         "/user/**", "/blog/**", "/category/all", "/category/search",
-                                        "follower/**").authenticated()
+                                        "/follower/**").authenticated()
                                 .requestMatchers("/**").hasRole("ADMIN")
                                 .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
