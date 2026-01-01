@@ -25,8 +25,8 @@ function App() {
 
   useEffect(() => {
     try {
-      const token = extractOAuth2TokenFromUrl();
-      if (token) getUserInfo(token);
+      // const token = extractOAuth2TokenFromUrl();
+      // if (token) getUserInfo(token);
     } catch (error) {
       toast.error("OAuth2 Error:", error);
     }

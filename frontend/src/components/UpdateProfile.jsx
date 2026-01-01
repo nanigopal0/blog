@@ -7,10 +7,10 @@ import { useContext, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Dialog from "./Dialog";
 
-export default function UpdateProfile({ email, name, photo, isOpen, onClose }) {
+export default function UpdateProfile({ bio, name, photo, isOpen, onClose }) {
   const [updatedName, setUpdatedName] = useState(name);
   const [updatedPhoto, setUpdatedPhoto] = useState(photo);
-  const [updatedEmail, setUpdatedEmail] = useState(email);
+  const [updatedBio, setUpdatedBio] = useState(bio);
   const { removeCreds, updateUserInfo } = useContext(AuthContext);
   const [imageFile, setImageFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ export default function UpdateProfile({ email, name, photo, isOpen, onClose }) {
       const data = {
         name: updatedName,
         photo: profileImageUrl,
-        email: updatedEmail,
+        bio: updatedBio,
       };
       await updateUserBackend(data);
     } catch (error) {
@@ -38,16 +38,16 @@ export default function UpdateProfile({ email, name, photo, isOpen, onClose }) {
     }
   };
 
-  const updateUserBackend = async (data)=>{
-    try{
+  const updateUserBackend = async (data) => {
+    try {
       const response = await updateUser(data);
       updateUserInfo(response);
       toast.success("Profile updated successfully");
-    }catch(error){
+    } catch (error) {
       const retry = await apiErrorHandle(error, removeCreds);
-      if(retry) updateUserBackend(data);
+      if (retry) updateUserBackend(data);
     }
-  }
+  };
 
   const handleChangeImageInput = (e) => {
     setUpdatedPhoto(URL.createObjectURL(e.target.files[0]));
@@ -93,14 +93,19 @@ export default function UpdateProfile({ email, name, photo, isOpen, onClose }) {
 
         {/* Change Email */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Email</label>
-          <input
-            type="email"
-            value={updatedEmail}
-            onChange={(e) => setUpdatedEmail(e.target.value)}
+          <label className="block text-sm font-medium mb-2">Bio</label>
+
+          <textarea
+            type="text"
+            value={updatedBio}
+            maxLength={500}
+            onChange={(e) => setUpdatedBio(e.target.value)}
             className="w-full py-2 px-3 border border-gray-500  
-          rounded-lg bg-white dark:bg-gray-700 "
+            rounded-lg bg-white dark:bg-gray-700 "
           />
+          <label className="text-sm block text-end font-medium mt-2">
+            {updatedBio.length}/500
+          </label>
         </div>
 
         <button

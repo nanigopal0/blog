@@ -65,6 +65,7 @@ public class EntityToDTO {
         currentUserResponseDTO.setTotalFollowings(totalFollowings);
         currentUserResponseDTO.setTotalFollowers(totalFollowers);
         currentUserResponseDTO.setTotalBlogs(totalBlogs);
+        currentUserResponseDTO.setBio(user.getBio());
         return currentUserResponseDTO;
     }
 

@@ -31,7 +31,7 @@ function Profile() {
       updateUserInfo(response);
     } catch (error) {
       const retry = await apiErrorHandle(error, removeCreds);
-      if(retry) fetchUser();
+      if (retry) fetchUser();
     } finally {
       setLoading(false);
     }
@@ -86,26 +86,39 @@ function Profile() {
                 </p>
               </div>
             </div>
-
+            {/* Bio */}
+            <div className="mb-4">{userInfo.bio}</div>
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-8 p-4 bg-gray-200 dark:bg-gray-700/50 rounded-xl">
               <button
                 onClick={() => setDisplayFollowers(true)}
                 className="text-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
               >
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.totalFollowers || 0}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Followers</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userInfo.totalFollowers || 0}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Followers
+                </p>
               </button>
               <button
                 onClick={() => setDisplayFollowings(true)}
                 className="text-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
               >
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.totalFollowings || 0}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Following</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userInfo.totalFollowings || 0}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Following
+                </p>
               </button>
               <div className="text-center p-3">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{userInfo.totalBlogs || 0}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Blogs</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userInfo.totalBlogs || 0}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Blogs
+                </p>
               </div>
             </div>
 
@@ -128,7 +141,7 @@ function Profile() {
             )}
 
             <UpdateProfile
-              email={userInfo.email}
+              bio={userInfo.bio}
               name={userInfo.name}
               photo={userInfo.photo}
               isOpen={showUpdateProfileDialog}
@@ -152,32 +165,40 @@ function Profile() {
 
             {/* Settings Section */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">Account Settings</h3>
-              
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+                Account Settings
+              </h3>
+
               <button
                 onClick={() => setShowUpdateProfileDialog(true)}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 flex items-center justify-between group"
               >
                 <span>Update Profile</span>
-                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">→</span>
+                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">
+                  →
+                </span>
               </button>
-              
+
               <button
                 onClick={() => setShowChangeEmailDialog(true)}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 flex items-center justify-between group"
               >
                 <span>Update Email</span>
-                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">→</span>
+                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">
+                  →
+                </span>
               </button>
-              
+
               <button
                 onClick={() => setShowChangePasswordDialog(true)}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 flex items-center justify-between group"
               >
                 <span>Change Password</span>
-                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">→</span>
+                <span className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200">
+                  →
+                </span>
               </button>
-              
+
               <button
                 onClick={() => setShowDeleteAccountDialog(true)}
                 className="w-full text-left px-4 py-3 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 flex items-center justify-between group"
