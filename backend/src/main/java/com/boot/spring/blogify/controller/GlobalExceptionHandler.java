@@ -67,6 +67,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorMessage("AESTokenException", e.getMessage()));
     }
 
+    @ExceptionHandler(PasswordException.class)
+    public ResponseEntity<ErrorMessage> handlePasswordException(PasswordException e) {
+        log.error(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorMessage("PasswordException", e.getMessage()));
+    }
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorMessage> handleUserNotFoundException(UserNotFoundException e) {
         log.error(e.getMessage());

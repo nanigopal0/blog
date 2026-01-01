@@ -42,26 +42,26 @@ public class UserController {
 
     @GetMapping("get-all")
     @RolesAllowed("ADMIN")
-    public ResponseEntity<List<UserDTO>> getAllUser() {
+    public ResponseEntity<List<CurrentUserResponseDTO>> getAllUser() {
         return ResponseEntity.ok(userService.findAllUser());
     }
 
-    @PutMapping("update/profile")
+    @PutMapping("update-profile")
     public ResponseEntity<CurrentUserResponseDTO> updateUserEntity(@RequestBody UpdateProfile dto) {
         CurrentUserResponseDTO updateUser = userService.updateUser(dto);
         return ResponseEntity.ok(updateUser);
     }
 
-    @PutMapping("change/password")
-    public ResponseEntity<String> changeUserPassword(@RequestBody UpdatePasswordDTO dto) {
+    @PutMapping("change-password")
+    public String changeUserPassword(@RequestBody UpdatePasswordDTO dto) {
         userService.changePassword(dto);
-        return ResponseEntity.ok("Password changed successfully");
+        return "Password changed successfully";
     }
 
     @PostMapping("change-email-otp")
-    public ResponseEntity<String> sendUpdateEmailOTP(@RequestBody UpdateEmailDTO dto){
+    public String sendUpdateEmailOTP(@RequestBody UpdateEmailDTO dto){
         userService.updateEmailOtp(dto);
-        return ResponseEntity.ok("OTP sent successfully. Verify OTP within 5 minutes");
+        return "OTP sent successfully. Verify OTP within 5 minutes";
     }
 
     @PutMapping("verify-update-email")
@@ -71,9 +71,9 @@ public class UserController {
     }
 
     @GetMapping("delete-otp")
-    public ResponseEntity<String> deleteUser() {
+    public String deleteUser() {
         userService.generateOTPForAccountDeletion();
-        return ResponseEntity.ok("OTP sent successfully. Verify OTP within 5 minutes");
+        return "OTP sent successfully. Verify OTP within 5 minutes";
     }
 
     @DeleteMapping("verify-delete-user")
@@ -95,12 +95,12 @@ public class UserController {
     }
 
     @GetMapping("logout")
-    public ResponseEntity<String> logout() {
+    public String logout() {
         userService.logout();
-        return ResponseEntity.ok("Logout successful!");
+        return "Logout successful!";
     }
 
-    @GetMapping("/ping")
+    @GetMapping("ping")
     public String ping() {
         return "Ping successful!";
     }

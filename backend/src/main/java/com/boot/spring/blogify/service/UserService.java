@@ -2,6 +2,7 @@ package com.boot.spring.blogify.service;
 
 import com.boot.spring.blogify.dto.*;
 import com.boot.spring.blogify.entity.AuthMode;
+import com.boot.spring.blogify.entity.User;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.data.domain.Page;
 
@@ -29,9 +30,11 @@ public interface UserService {
 
     void changePassword(UpdatePasswordDTO dto);
 
-    List<UserDTO> findAllUser();
+    List<CurrentUserResponseDTO> findAllUser();
 
     Page<UserOverviewDTO> searchUsers(String name, String sortBy, String sortOrder, int pageNumber, int pageSize);
+
+    User findUserByEmail(String email);
 
     void logout();
 

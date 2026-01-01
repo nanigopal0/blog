@@ -5,6 +5,7 @@ import com.boot.spring.blogify.dto.*;
 import com.boot.spring.blogify.entity.AuthMode;
 import com.boot.spring.blogify.entity.Reason;
 import com.boot.spring.blogify.entity.User;
+import com.boot.spring.blogify.exception.PasswordException;
 import com.boot.spring.blogify.exception.UserAlreadyExistException;
 import com.boot.spring.blogify.exception.UserNotFoundException;
 import com.boot.spring.blogify.exception.UserNotVerifiedException;
@@ -78,6 +79,9 @@ public class UserServiceImpl implements UserService {
         this.otpService = otpService;
     }
 
+    public User findUserByEmail(String email) {
+        return userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+    }
 
     @Override
     public CurrentUserResponseDTO findUserByEmail() {
@@ -131,6 +135,8 @@ public class UserServiceImpl implements UserService {
                 throw new UserAlreadyExistException(user.getEmail());
         } catch (UserNotFoundException ignored) {
         }
+        if(!GeneralMethod.validatePassword(user.getPassword()))
+            throw new PasswordException();
         User newUser = new User();
         newUser.setAuthMode(authMode);
         newUser.setEmail(user.getEmail());
@@ -249,8 +255,9 @@ public class UserServiceImpl implements UserService {
         if (updateUser.photo() != null && !updateUser.photo().isEmpty())
             user.setPhoto(updateUser.photo());
 
-        if (updateUser.email() != null && !updateUser.email().isEmpty())
-            user.setEmail(updateUser.email());
+        if (updateUser.bio() != null && !updateUser.bio().isEmpty())
+            user.setBio(updateUser.bio());
+
         User updatedUser = userRepo.save(user);
         Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
         Long totalFollower = followerService.getFollowerCount(user.getId());
@@ -261,8 +268,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(UpdatePasswordDTO dto) {
+        if (!GeneralMethod.validatePassword(dto.newPassword()))
+            throw new PasswordException();
         User user = getUser();
-        if (!passwordEncoder.matches(dto.oldPassword(), user.getPassword()))
+        if (user.getPassword() != null && !passwordEncoder.matches(dto.oldPassword(), user.getPassword()))
             throw new BadCredentialsException("Current password is wrong!");
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         userRepo.save(user);
@@ -291,12 +300,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDTO> findAllUser() {
+    public List<CurrentUserResponseDTO> findAllUser() {
         return userRepo.findAll().stream().map(user -> {
                     Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
                     Long totalFollower = followerService.getFollowerCount(user.getId());
                     Long totalFollowing = followerService.getFollowingCount(user.getId());
-                    return entityToDTO.convertUserToUserDTO(user, totalBlogs, totalFollowing, totalFollower);
+                    return entityToDTO.convertUserToCurrentUserResponseDTO(user, totalBlogs, totalFollowing, totalFollower);
                 }
         ).toList();
     }

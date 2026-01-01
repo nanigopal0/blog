@@ -14,6 +14,7 @@ public class UserDTO {
     private String name;
     private String photo;
     private String username;
+    private String bio;
     private Long totalBlogs = 0L;
     private Long totalFollowers = 0L;
     private Long totalFollowings = 0L;
