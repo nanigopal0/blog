@@ -1,0 +1,1 @@
+export const ConstBlogPageSize: readonly number[] = [10, 20, 30] as const;
