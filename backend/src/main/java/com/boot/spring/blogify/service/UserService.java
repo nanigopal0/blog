@@ -1,48 +1,43 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.dto.*;
-import com.boot.spring.blogify.entity.AuthMode;
-import com.boot.spring.blogify.entity.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.springframework.data.domain.Page;
+import com.boot.spring.blogify.dto.auth.*;
+import com.boot.spring.blogify.dto.user.*;
+import com.boot.spring.blogify.entity.user.User;
+import org.springframework.data.web.PagedModel;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public interface UserService {
 
-    LoginResponse login(SignInRequestDTO signInRequest);
+    BasicUserInfo login(SignInRequestDTO signInRequest);
 
-    String register(UserRegisterRequestDTO user, AuthMode authMode);
+    void register(UserRegisterRequestDTO user);
 
-    UserDTO findUserByUsername(String username);
+    void registerFromOAuth2(UserRegisterRequestDTO user, String providerUserId, DefaultAuthProvider provider);
 
-    UserDTO findUserById(Long id);
+    void loginOAuth2(String email, String providerUserId, DefaultAuthProvider provider);
 
-    CurrentUserResponseDTO findUserByEmail();
+    void linkOAuth2(DefaultAuthProvider provider, String oAuthEmail, String providerUserId, Long id);
 
-    CurrentUserResponseDTO updateUser(UpdateProfile user);
+    void unlinkAuthProvider(Long authModeId);
+
+    BasicUserInfo findUserByUsername(String username);
+
+    User findById(Long id);
+
+    BasicUserInfo updateUser(UpdateProfile user);
 
     void changePassword(UpdatePasswordDTO dto);
 
-    List<CurrentUserResponseDTO> findAllUser();
+    List<BasicUserInfo> findAllUser();
 
-    Page<UserOverviewDTO> searchUsers(String name, String sortBy, String sortOrder, int pageNumber, int pageSize);
+    PagedModel<UserOverviewDTO> searchUsers(String name, String sortBy, String sortOrder, int pageNumber, int pageSize);
 
     User findUserByEmail(String email);
 
     void logout();
 
-    LoginResponse generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
-            InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
-            NoSuchAlgorithmException, BadPaddingException, InvalidKeyException;
-
-    boolean verifyUser(String email, String otp);
+    boolean verifyUser(String otp,String email);
 
     void forgotPasswordOTP(String email);
 
@@ -52,9 +47,19 @@ public interface UserService {
 
     void verifyOTPAndDeleteUser(String otp);
 
-    void updateEmailOtp(UpdateEmailDTO dto);
+    void OTPForUpdateEmail(UpdateEmailDTO dto);
 
-    void verifyAndUpdateEmail(EmailVerificationDTO dto);
+    boolean existsUserWithEmail(String email);
 
-    void generateAccessTokenFromRefreshToken(String refreshToken);
+    void verifyAndUpdateEmail(String otp);
+
+    BasicUserInfo extractBasicInfo();
+
+    UserDTO getCurrentUserInfo();
+
+    void setPassword(String password);
+
+    List<AuthProviderDTO> getAllLinkedAuthProvider();
+
+    void changeDefaultAuthMode(Long authModeId);
 }

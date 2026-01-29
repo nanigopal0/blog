@@ -1,12 +1,12 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.dto.BlogReactionRequestDTO;
-import com.boot.spring.blogify.dto.BlogReactionResponseDTO;
+import com.boot.spring.blogify.dto.blog.BlogReactionDTO;
+import com.boot.spring.blogify.dto.blog.BlogReactionRequestDTO;
 
 public interface BlogReactionService {
-    BlogReactionResponseDTO like(BlogReactionRequestDTO blogLike);
+    BlogReactionDTO like(Long blogId);
 
-    BlogReactionResponseDTO disLike(Long blogReactionId);
+    BlogReactionDTO disLike(Long blogReactionId, Long blogId);
 
-    public void deleteAllBlogReactionsByUserId(Long userId);
+    void deleteAllBlogReactionsByUserId(Long userId);
 }

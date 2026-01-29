@@ -1,18 +1,20 @@
 package com.boot.spring.blogify.jwt;
 
-import com.boot.spring.blogify.configuration.CustomUserDetails;
-import com.boot.spring.blogify.service.implementation.CustomUserDetailService;
+import com.boot.spring.blogify.dto.user.BaseUser;
+import com.boot.spring.blogify.entity.user.User;
+import com.boot.spring.blogify.service.CookieService;
+import com.boot.spring.blogify.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.MalformedJwtException;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,82 +22,80 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-    private static final String SECRET = generateRandom();
-    public static final long ACCESS_TOKEN_VALIDITY_IN_MINUTES = 15;
-    private static final long REFRESH_TOKEN_VALIDITY_IN_DAYS = 7;
-    private final CustomUserDetailService customUserDetailService;
+    //    private static final String SECRET = "generateRandom54843gkjskjj9349843kjldfsajkskjfkaKJJKDKF";
+    public static final long ACCESS_TOKEN_VALIDITY_IN_MINUTES = 2;
+    public static final long REFRESH_TOKEN_VALIDITY_IN_DAYS = 7;
 
-    public JwtService(CustomUserDetailService customUserDetailService) {
-        this.customUserDetailService = customUserDetailService;
+    private final UserService userService;
+    private final CookieService cookieService;
+    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
+
+    public JwtService(@Lazy UserService userService, CookieService cookieService) {
+        this.userService = userService;
+        this.cookieService = cookieService;
     }
 
-    public static String generateRandom() {
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[32];
-        random.nextBytes(bytes);
-        return Base64.getEncoder().encodeToString(bytes);
-    }
-
-    public String generateAccessToken(String username, String name, Long id, String role, String email) {
+    //user 'id' is the subject as it is permanent
+    public String generateAccessToken(String username, String name, Long id, String role, boolean userVerified) {
         Map<String, String> claims = new HashMap<>();
         claims.put("name", name);
-        claims.put("id", id.toString());
         claims.put("role", role);
         claims.put("username", username);
+        claims.put("verified", String.valueOf(userVerified));
         return Jwts.builder()
                 .claims(claims)
-                .subject(email)
+                .subject(id.toString())
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(Duration.ofMinutes(ACCESS_TOKEN_VALIDITY_IN_MINUTES))))
-                .signWith(generateKey())
+                .signWith(secretKey)
                 .compact();
     }
 
-    public String generateRefreshToken(Long id, String role, String email, String username) {
+    //user 'id' is the subject as it is permanent
+    public String generateRefreshToken(Long id, String role, String username, boolean userVerified) {
         Map<String, String> claims = new HashMap<>();
-        claims.put("id", id.toString());
         claims.put("role", role);
         claims.put("username", username);
-        return Jwts.builder().claims(claims).subject(email).issuedAt(new Date())
+        claims.put("verified", String.valueOf(userVerified));
+        return Jwts.builder()
+                .claims(claims)
+                .subject(id.toString())
+                .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(Duration.ofDays(REFRESH_TOKEN_VALIDITY_IN_DAYS))))
-                .signWith(generateKey())
+                .signWith(secretKey)
                 .compact();
-    }
-
-
-    private SecretKey generateKey() {
-        byte[] decodeKey = Base64.getDecoder().decode(SECRET);
-        return Keys.hmacShaKeyFor(decodeKey);
     }
 
     public Claims getClaims(String token) {
         return Jwts.parser()
-                .verifyWith(generateKey())
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    public String extractUsername(String token) {
-        return getClaims(token).getSubject();
+    public boolean validateJwtClaimsAge(Claims claims) {
+        return claims.getExpiration().after(new Date());
     }
 
-    public boolean isAccessTokenValid(String token) {
-        return getClaims(token).getExpiration().after(new Date());
-    }
+    /*
+        1. Find user by email
+        2. Match the refresh token with the database one
+        3. Generated access token
+        4. Add the access token to cookie
+        5. Return the BaseUser
+     */
+    public BaseUser generateAccessTokenFromRefreshTokenClaims(HttpServletResponse response, Claims refreshTokenClaims, String refreshToken) {
+        String sub = refreshTokenClaims.getSubject();
+        if (sub == null) throw new MalformedJwtException("Invalid refresh token! Subject is null");
+        Long id = Long.parseLong(sub);
+        User user = userService.findById(id);
+        if (user.getRefreshToken().equals(refreshToken)) {
+            String accessToken = generateAccessToken(user.getUsername(), user.getName(), user.getId(), user.getRole().name(), user.isUserVerified());
+            cookieService.addTokenToCookie(response, CookieService.JWT_COOKIE_NAME, accessToken, JwtService.ACCESS_TOKEN_VALIDITY_IN_MINUTES);
 
-    public String validateRefreshTokenAndGenerateAccessToken(String token) {
-        Claims claims = getClaims(token);
-        if (claims.getExpiration().after(new Date())) {
-            String id = claims.get("id", String.class);
-            String role = claims.get("role", String.class);
-            String username = claims.get("username", String.class);
-            CustomUserDetails userDetails = (CustomUserDetails) customUserDetailService.loadUserByUsername(claims.getSubject());
-            if (token.equals(userDetails.getRefreshToken()) && String.valueOf(userDetails.getId()).equals(id) && userDetails.getRole().equals(role)
-                    && userDetails.getUserName().equals(username))
-                return generateAccessToken(username, userDetails.getFullName(), userDetails.getId(), role, claims.getSubject());
-            else throw new BadCredentialsException("Invalid refresh token");
-        } else throw new BadCredentialsException("Refresh token expired");
+            return new BaseUser(user.getId(), user.getName(), user.getPhoto(), user.getUsername(), user.getEmail(),
+                    null, user.getRole(), user.isUserVerified());
+        } else throw new BadCredentialsException("Invalid refresh token");
     }
-
 }

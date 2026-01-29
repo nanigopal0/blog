@@ -1,32 +1,31 @@
 package com.boot.spring.blogify.service.implementation;
 
-import com.boot.spring.blogify.dto.BlogDataDTO;
-import com.boot.spring.blogify.dto.BlogOverviewDTO;
-import com.boot.spring.blogify.dto.BlogPostDTO;
-import com.boot.spring.blogify.dto.BlogReactionResponseDTO;
-import com.boot.spring.blogify.entity.BlogData;
-import com.boot.spring.blogify.entity.BlogReaction;
-import com.boot.spring.blogify.entity.Category;
-import com.boot.spring.blogify.entity.User;
+import com.boot.spring.blogify.dto.blog.BlogDTO;
+import com.boot.spring.blogify.dto.blog.BlogPostDTO;
+import com.boot.spring.blogify.dto.blog.BlogSummaryDTO;
+import com.boot.spring.blogify.dto.blog.UpdateBlogRequest;
+import com.boot.spring.blogify.entity.blog.BlogData;
+import com.boot.spring.blogify.entity.blog.Category;
+import com.boot.spring.blogify.entity.user.User;
 import com.boot.spring.blogify.exception.BlogNotFoundException;
 import com.boot.spring.blogify.exception.CategoryNotFoundException;
 import com.boot.spring.blogify.exception.UserNotFoundException;
 import com.boot.spring.blogify.repositories.BlogReactionRepo;
 import com.boot.spring.blogify.repositories.BlogRepo;
 import com.boot.spring.blogify.repositories.CategoryRepo;
-import com.boot.spring.blogify.repositories.UserRepo;
 import com.boot.spring.blogify.service.BlogService;
-import com.boot.spring.blogify.service.CommentService;
-import com.boot.spring.blogify.util.EntityToDTO;
+import com.boot.spring.blogify.service.UserService;
 import com.boot.spring.blogify.util.GeneralMethod;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.Objects;
 
 import static com.boot.spring.blogify.util.GeneralMethod.getPageable;
 
@@ -35,19 +34,19 @@ import static com.boot.spring.blogify.util.GeneralMethod.getPageable;
 public class BlogServiceImpl implements BlogService {
 
     private final BlogRepo blogRepo;
-    private final UserRepo userRepo;
-    private final CommentService commentService;
     private final CategoryRepo categoryRepo;
-    private final EntityToDTO entityToDTO;
     private final BlogReactionRepo blogReactionRepo;
+    private final UserService userService;
 
-    BlogServiceImpl(BlogRepo blogRepo, UserRepo userRepo, CommentService commentService, CategoryRepo categoryRepo, EntityToDTO entityToDTO, BlogReactionRepo blogReactionRepo) {
+    BlogServiceImpl(
+            BlogRepo blogRepo,
+            CategoryRepo categoryRepo,
+            BlogReactionRepo blogReactionRepo,
+            @Lazy UserService userService) {
         this.blogRepo = blogRepo;
-        this.userRepo = userRepo;
-        this.commentService = commentService;
         this.categoryRepo = categoryRepo;
-        this.entityToDTO = entityToDTO;
         this.blogReactionRepo = blogReactionRepo;
+        this.userService = userService;
     }
 
 
@@ -56,14 +55,12 @@ public class BlogServiceImpl implements BlogService {
     public void createNewBlog(BlogPostDTO blog) throws UserNotFoundException {
         Category category = categoryRepo.findById(blog.getCategoryId()).orElseThrow(() ->
                 new CategoryNotFoundException(" Id: " + blog.getCategoryId()));
-        User user = userRepo.findById(blog.getUserId()).orElseThrow(() ->
-                new UserNotFoundException("User not found! Id: " + blog.getUserId()));
-
+        User user = userService.findById(blog.getUserId());
         BlogData blogData = new BlogData();
         blogData.setUser(user);
         blogData.setContent(blog.getContent());
         blogData.setCategory(category);
-        blogData.setTime(LocalDateTime.now());
+        blogData.setCreatedAt(LocalDateTime.now());
         blogData.setTitle(blog.getTitle());
         blogData.setCoverImage(blog.getCoverImage());
 
@@ -72,31 +69,28 @@ public class BlogServiceImpl implements BlogService {
 
 
     @Override
-    public Page<BlogOverviewDTO> getAllBlogsOfUser(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+    public PagedModel<BlogSummaryDTO> getAllBlogsOfUser(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+        GeneralMethod.validateSortByType(sortBy, BlogData.class);
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return blogRepo.findAllBlogsByUserId(userId, pageable);
+        return new PagedModel<>(blogRepo.findAllBlogsByUserId(userId, pageable));
     }
 
     @Override
-    public BlogDataDTO getBlogById(Long blogId) {
-        BlogData blog = blogRepo.findById(blogId).orElseThrow(() -> new BlogNotFoundException(" Id: " + blogId));
-        Long count = blogReactionRepo.countBlogReactionsByBlogId(blogId);
-        Optional<BlogReaction> reaction = blogReactionRepo.findBlogReactionIdByUserIdAndBlogId(GeneralMethod.getCurrentUser().getId(), blogId);
-        BlogReactionResponseDTO dto = BlogReactionResponseDTO.builder()
-                .reactionId(reaction.isPresent() ? reaction.get().getId() : 0L)
-                .totalLikes(count)
-                .build();
-        return entityToDTO.convertBlogDataToBlogDataDTO(blog, dto);
+    public BlogDTO getBlogById(Long blogId) {
+        return blogRepo.findBlogById(blogId, GeneralMethod.getCurrentUser().getId());
     }
-
 
     @Override
     @Transactional
-    public void updateBlog(BlogDataDTO update) {
-        BlogData blog = blogRepo.findById(update.getId()).orElseThrow(() -> new BlogNotFoundException(" Id: " + update.getId()));
-        if (update.getContent() != null) blog.setContent(update.getContent());
-        if (update.getTitle() != null) blog.setTitle(update.getTitle());
-        if (update.getCoverImage() != null) blog.setCoverImage(update.getCoverImage());
+    public void updateBlog(Long blogId, UpdateBlogRequest request) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        BlogData blog = findBlogById(blogId);
+        if (!Objects.equals(blog.getUser().getId(), userId))
+            throw new AccessDeniedException("You are not authorized to update this blog!");
+
+        if (request.content() != null) blog.setContent(request.content());
+        if (request.title() != null) blog.setTitle(request.title());
+        if (request.coverImage() != null) blog.setCoverImage(request.coverImage());
         blogRepo.save(blog);
     }
 
@@ -108,10 +102,14 @@ public class BlogServiceImpl implements BlogService {
     @Override
     @Transactional
     public void deleteBlog(Long blogId) {
-        blogRepo.findById(blogId).orElseThrow(() -> new BlogNotFoundException(" Id: " + blogId));
-        commentService.deleteAllCommentsByBlogId(blogId);  //all comments delete
+        findBlogById(blogId);
         blogReactionRepo.deleteAllByBlogId(blogId); //all blog reaction delete
         blogRepo.deleteById(blogId);
+    }
+
+    @Override
+    public BlogData findBlogById(Long blogId) {
+        return blogRepo.findById(blogId).orElseThrow(() -> new BlogNotFoundException(" Id: " + blogId));
     }
 
     @Override
@@ -120,24 +118,27 @@ public class BlogServiceImpl implements BlogService {
     }
 
     @Override
-    public Page<BlogOverviewDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+    public PagedModel<BlogSummaryDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+        GeneralMethod.validateSortByType(sortBy, BlogData.class);
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return blogRepo.findByTitleStartsWith(title, pageable);
+        return new PagedModel<>(blogRepo.findByTitleStartsWith(title, pageable));
     }
 
     @Override
-    public Page<BlogOverviewDTO> getAllBlogsByCategory(
+    public PagedModel<BlogSummaryDTO> getAllBlogsByCategory(
             Long categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize
-    ) throws BlogNotFoundException {
+    ) {
+        GeneralMethod.validateSortByType(sortBy, BlogData.class);
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return blogRepo.findAllByCategoryId(categoryId, pageable);
+        return new PagedModel<>(blogRepo.findAllByCategoryId(categoryId, pageable));
     }
 
 
     @Override
-    public Page<BlogOverviewDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder) {
+    public PagedModel<BlogSummaryDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder) {
+        GeneralMethod.validateSortByType(sortBy, BlogData.class);
         Pageable pageable = getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return blogRepo.findAllBy(pageable);
+        return new PagedModel<>(blogRepo.findAllBy(pageable));
     }
 
 

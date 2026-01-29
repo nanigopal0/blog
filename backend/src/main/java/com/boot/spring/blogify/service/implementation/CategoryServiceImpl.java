@@ -1,10 +1,9 @@
 package com.boot.spring.blogify.service.implementation;
 
 import com.boot.spring.blogify.dto.CategoryDTO;
-import com.boot.spring.blogify.entity.Category;
+import com.boot.spring.blogify.entity.blog.Category;
 import com.boot.spring.blogify.repositories.CategoryRepo;
 import com.boot.spring.blogify.service.CategoryService;
-import com.boot.spring.blogify.util.EntityToDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,11 +13,11 @@ import java.util.List;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepo categoryRepo;
-    private final EntityToDTO entityToDTO;
 
-    public CategoryServiceImpl(CategoryRepo categoryRepo, EntityToDTO entityToDTO) {
+
+    public CategoryServiceImpl(CategoryRepo categoryRepo) {
         this.categoryRepo = categoryRepo;
-        this.entityToDTO = entityToDTO;
+
     }
 
     @Transactional

@@ -3,6 +3,7 @@ package com.boot.spring.blogify.controller;
 import com.boot.spring.blogify.dto.CommentDTO;
 import com.boot.spring.blogify.service.CommentService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,23 +19,31 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @PostMapping
-    public ResponseEntity<CommentDTO> saveComment(@RequestBody CommentDTO comment) {
-        return new ResponseEntity<>(commentService.saveComment(comment), HttpStatus.CREATED);
+    @PostMapping("add")
+    public ResponseEntity<String> saveComment(@RequestBody String comment, @RequestParam Long blogId) {
+        commentService.saveComment(comment, blogId);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Comment added successfully!");
     }
 
-    @DeleteMapping
-    public ResponseEntity<String> deleteComment(@RequestParam(value = "commentID") Long commentID) {
-        return new ResponseEntity<>(commentService.deleteComment(commentID), HttpStatus.NO_CONTENT);
+    @DeleteMapping("delete")
+    public ResponseEntity<Void> deleteComment(@RequestParam Long commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PutMapping
-    public ResponseEntity<String> updateComment(@RequestBody CommentDTO comment) {
-        return new ResponseEntity<>(commentService.updateComment(comment), HttpStatus.OK);
+    @PutMapping("update")
+    public ResponseEntity<String> updateComment(@RequestBody String comment, @RequestParam Long commentId) {
+        commentService.updateComment(commentId, comment);
+        return ResponseEntity.ok("Comment updated successfully!");
     }
 
-    @GetMapping
-    public ResponseEntity<CommentDTO> getComment(@RequestParam(value = "commentID") Long commentID) {
-        return new ResponseEntity<>(commentService.getComment(commentID), HttpStatus.CREATED);
+    @GetMapping("get")
+    public ResponseEntity<PagedModel<CommentDTO>> getPaginatedComments(
+            @RequestParam Long blogId,
+            @RequestParam(value = "pageNumber", defaultValue = "0", required = false) int pageNumber,
+            @RequestParam(value = "pageSize", defaultValue = "10", required = false) int pageSize
+    ) {
+        return ResponseEntity.ok(commentService.getComments(blogId, pageNumber, pageSize));
     }
+
 }

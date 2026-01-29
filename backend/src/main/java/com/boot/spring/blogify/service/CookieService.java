@@ -1,6 +1,5 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.jwt.JwtService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -11,9 +10,12 @@ import java.time.Duration;
 @Service
 public class CookieService {
 
+    public static final String JWT_COOKIE_NAME = "acc";
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "ref";
 
-    public void deleteJWTFromCookie(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+    public void deleteJWTFromCookie(HttpServletResponse response, String name) {
+
+        ResponseCookie cookie = ResponseCookie.from(name, "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -21,18 +23,18 @@ public class CookieService {
                 .sameSite("None")
                 .build();
 
-        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
-    public void addTokenToCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from("jwt", token)
+    public void addTokenToCookie(HttpServletResponse response, String name, String value, long validityInMinutes) {
+        ResponseCookie cookie = ResponseCookie.from(name, value)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(Duration.ofMinutes(JwtService.ACCESS_TOKEN_VALIDITY_IN_MINUTES).getSeconds())
+                .maxAge(Duration.ofMinutes(validityInMinutes).getSeconds())
                 .sameSite("None")
                 .build();
 
-        response.setHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

@@ -1,7 +1,7 @@
 package com.boot.spring.blogify.controller;
 
-import com.boot.spring.blogify.dto.BlogReactionRequestDTO;
-import com.boot.spring.blogify.dto.BlogReactionResponseDTO;
+import com.boot.spring.blogify.dto.blog.BlogReactionDTO;
+import com.boot.spring.blogify.dto.blog.BlogReactionRequestDTO;
 import com.boot.spring.blogify.service.BlogReactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +19,15 @@ public class BlogReactionController {
     }
 
     @PostMapping("like")
-    public ResponseEntity<BlogReactionResponseDTO> like(@RequestBody BlogReactionRequestDTO blogLike) {
-        return ResponseEntity.ok().body(blogReactionService.like(blogLike));
+    public ResponseEntity<BlogReactionDTO> like(@RequestParam Long blogId) {
+        return ResponseEntity.ok().body(blogReactionService.like(blogId));
     }
 
     @DeleteMapping("dislike")
-    public ResponseEntity<BlogReactionResponseDTO> disLike(@RequestParam Long blogReactionId) {
-        return ResponseEntity.ok().body(blogReactionService.disLike(blogReactionId));
+    public ResponseEntity<BlogReactionDTO> disLike(
+            @RequestParam Long blogReactionId,
+            @RequestParam Long blogId
+    ) {
+        return ResponseEntity.ok().body(blogReactionService.disLike(blogReactionId, blogId));
     }
 }

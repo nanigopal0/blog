@@ -1,25 +1,27 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.dto.UserOverviewDTO;
-import org.springframework.data.domain.Page;
+import com.boot.spring.blogify.dto.FollowOverviewDTO;
+import com.boot.spring.blogify.dto.FollowResponseDTO;
+import com.boot.spring.blogify.dto.user.UserOverviewDTO;
+import org.springframework.data.web.PagedModel;
 
 public interface FollowerService {
 
-    void follow(Long followedId);
+    FollowResponseDTO follow(Long followedId);
 
-    void unfollow(Long followedId);
+    FollowResponseDTO unfollow(Long followedId);
 
-    boolean isFollowing(Long userId, Long followedId);
+    FollowOverviewDTO getFollowInfo( Long followedId);
 
     /**
      * Return all followers of a user
      */
-    Page<UserOverviewDTO> getAllFollowers(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize);
+    PagedModel<UserOverviewDTO> getAllFollowers(Long userId, int pageNumber, int pageSize);
 
     /**
      * Return all followings of the specific user
      */
-    Page<UserOverviewDTO> getAllFollowings(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize);
+    PagedModel<UserOverviewDTO> getAllFollowings(Long userId, int pageNumber, int pageSize);
 
     Long getFollowerCount(Long userId);
 

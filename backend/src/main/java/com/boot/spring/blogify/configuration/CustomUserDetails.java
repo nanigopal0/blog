@@ -1,7 +1,6 @@
 package com.boot.spring.blogify.configuration;
 
-import com.boot.spring.blogify.entity.BaseUser;
-import com.boot.spring.blogify.entity.User;
+import com.boot.spring.blogify.dto.user.BaseUser;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,19 +14,15 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CustomUserDetails implements UserDetails {
+    // Always get not null user data for the fields id, name, username, role, userVerified
     private final transient BaseUser user;
 
     public Long getId() {
         return user.getId();
     }
 
-    public String getRefreshToken(){
-        if (user instanceof User) return ((User) user).getRefreshToken();
-        return null;
-    }
-
-    public String getUserPhoto() {
-        return user.getPhoto();
+    public boolean isUserVerified() {
+        return user.isUserVerified();
     }
 
     public String getFullName() {

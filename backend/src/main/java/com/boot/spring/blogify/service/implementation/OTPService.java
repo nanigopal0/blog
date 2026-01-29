@@ -1,7 +1,8 @@
 package com.boot.spring.blogify.service.implementation;
 
-import com.boot.spring.blogify.entity.OTP;
-import com.boot.spring.blogify.entity.Reason;
+import com.boot.spring.blogify.entity.otp.OTP;
+import com.boot.spring.blogify.entity.otp.Reason;
+import com.boot.spring.blogify.entity.user.User;
 import com.boot.spring.blogify.repositories.OTPRepository;
 import com.boot.spring.blogify.util.GeneralMethod;
 import jakarta.mail.MessagingException;
@@ -22,21 +23,25 @@ public class OTPService {
         this.mailService = mailService;
     }
 
-    public void generateOTP(Long userId,String userFullName,String email, Reason reason) {
+    public void generateOTP(User user, String email, Reason reason) {
         OTP otp = new OTP();
         otp.setOtp(String.valueOf(GeneralMethod.generateRandomNumber()));
         otp.setVerified(false);
         otp.setReason(reason);
-        otp.setUserId(userId);
+        otp.setUser(user);
+        otp.setEmail(email);
         otp.setCreatedAt(LocalDateTime.now());
-        Map<String, Object> vars = Map.of("name", userFullName, "reason", generateOTPReason(reason), "otp", otp.getOtp());
+        Map<String, Object> vars = Map.of("name", user.getName(), "reason", generateOTPReason(reason), "otp", otp.getOtp());
         try {
             mailService.sendMimeMail(email, generateMailSubject(reason), vars);
             otpRepository.save(otp);
         } catch (MessagingException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public void deleteAllUserOTPs(Long userId){
+        otpRepository.deleteByUserId(userId);
     }
 
     private String generateOTPReason(Reason reason) {
@@ -89,5 +94,9 @@ public class OTPService {
             return true;
         }
         return false;
+    }
+
+    public OTP getEmailFromOTPObj(Long userId, Reason reason) {
+        return otpRepository.findByUserIdAndReasonOrderByCreatedAtDesc(userId, reason, Limit.of(1)).orElseThrow();
     }
 }

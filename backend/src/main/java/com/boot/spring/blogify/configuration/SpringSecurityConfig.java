@@ -47,13 +47,15 @@ public class SpringSecurityConfig {
         httpSecurity.
                 cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(registry ->
-                        registry.requestMatchers("/public/**", "/admin/login", "/actuator/health").permitAll()
-                                .requestMatchers("/user/get-oauth2", "/comment/**", "/blog/reaction/**",
-                                        "/user/**", "/blog/**", "/category/all", "/category/search",
-                                        "/follower/**").authenticated()
-                                .requestMatchers("/**").hasRole("ADMIN")
-                                .anyRequest().authenticated())
+                .authorizeHttpRequests(registry -> registry
+                        .requestMatchers("/public/**", "/admin/login", "/actuator/health").permitAll()
+                        .requestMatchers("/user/get-all").hasRole("ADMIN")
+                        .requestMatchers("/user/get-oauth2", "/comment/**", "/blog/reaction/**",
+                                "/user/**", "/blog/**", "/category/all", "/category/search",
+                                "/follower/**").authenticated()
+                        .requestMatchers("/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
                 .httpBasic(Customizer.withDefaults())
                 .oauth2Login(oauth2 -> oauth2.successHandler(oauth2LoginHandler))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
@@ -65,7 +67,7 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://blog-gama.vercel.app", "https://blog-abcs-projects-883dea03.vercel.app/", "https://blog-git-master-abcs-projects-883dea03.vercel.app/", "http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("https://blog-gama.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

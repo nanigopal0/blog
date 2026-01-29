@@ -1,77 +1,68 @@
 package com.boot.spring.blogify.service.implementation;
 
 import com.boot.spring.blogify.dto.CommentDTO;
-import com.boot.spring.blogify.entity.BlogData;
-import com.boot.spring.blogify.entity.Comment;
-import com.boot.spring.blogify.entity.User;
-import com.boot.spring.blogify.exception.BlogNotFoundException;
+import com.boot.spring.blogify.entity.blog.Comment;
 import com.boot.spring.blogify.exception.CommentNotFoundException;
-import com.boot.spring.blogify.repositories.BlogRepo;
 import com.boot.spring.blogify.repositories.CommentRepo;
-import com.boot.spring.blogify.repositories.UserRepo;
+import com.boot.spring.blogify.service.BlogService;
 import com.boot.spring.blogify.service.CommentService;
+import com.boot.spring.blogify.service.UserService;
+import com.boot.spring.blogify.util.EntityToDTO;
+import com.boot.spring.blogify.util.GeneralMethod;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepo commentRepo;
-    private final BlogRepo blogRepo;
-    private final UserRepo userRepo;
 
-    public CommentServiceImpl(CommentRepo commentRepo, BlogRepo blogRepo, UserRepo userRepo) {
+    private final UserService userService;
+    private final BlogService blogService;
+    private final EntityToDTO entityToDTO;
+
+    public CommentServiceImpl(CommentRepo commentRepo, UserService userService, BlogService blogService, EntityToDTO entityToDTO) {
         this.commentRepo = commentRepo;
-        this.blogRepo = blogRepo;
-        this.userRepo = userRepo;
+        this.userService = userService;
+        this.blogService = blogService;
+        this.entityToDTO = entityToDTO;
+    }
+
+    @Transactional
+    @Override
+    public void saveComment(String comment, Long blogId) {
+        Long commenterId = GeneralMethod.findAuthenticatedUserId();
+        commentRepo.saveComment(commenterId, blogId, comment);
+//        Long userId = GeneralMethod.findAuthenticatedUserId();
+//        User user = userService.findById(userId);
+//        BlogData blog = blogService.findBlogById(blogId);
+//        Comment c = new Comment(null, user, blog, comment, LocalDateTime.now());
+//        Comment saved = commentRepo.save(c);
+//        return entityToDTO.convertCommentToCommentDTO(saved);
     }
 
     @Override
-    public CommentDTO saveComment(CommentDTO comment) {
-        User user = userRepo.findById(comment.getUserId()).orElseThrow(() -> new CommentNotFoundException(" Id: " + comment.getUserId()));
-        BlogData blogData = blogRepo.findById(comment.getBlogId()).orElseThrow(() -> new BlogNotFoundException(" Id: " + comment.getBlogId()));
-        Comment comment1 = Comment.builder()
-                .commentedAt(LocalDateTime.now())
-                .blog(blogData)
-                .comment(comment.getComment())
-                .user(user)
-                .build();
-        Comment saved = commentRepo.save(comment1);
-        comment.setCommentedAt(saved.getCommentedAt());
-        comment.setId(saved.getCommentId());
-        return comment;
+    public void deleteComment(Long commentID) {
+        commentRepo.deleteById(commentID);
     }
 
     @Override
-    public String deleteComment(Long commentID) {
-        Comment comment = commentRepo.findById(commentID).orElseThrow(CommentNotFoundException::new);
-        commentRepo.delete(comment);
-        return "Successfully deleted comment";
-    }
-
-    @Override
-    public String updateComment(CommentDTO comment) {
-        Comment prevComment = commentRepo.findById(comment.getId()).orElseThrow(() -> new CommentNotFoundException("Comment not found!"));
-        prevComment.setComment(comment.getComment());
+    @Transactional
+    public void updateComment(Long commentId, String comment) {
+        Comment prevComment = commentRepo.findById(commentId).orElseThrow(() -> new CommentNotFoundException("Comment not found!"));
+        prevComment.setComment(comment);
         commentRepo.save(prevComment);
-        return "Successfully updated comment";
+//        return entityToDTO.convertCommentToCommentDTO(updated);
     }
 
     @Override
-    public CommentDTO getComment(Long commentID) {
-        Comment comment = commentRepo.findById(commentID).orElseThrow(CommentNotFoundException::new);
-        return CommentDTO.builder()
-                .id(comment.getCommentId())
-                .userId(comment.getUser().getId())
-                .blogId(comment.getBlog().getId())
-                .commentedAt(comment.getCommentedAt())
-                .userFullName(comment.getUser().getName())
-                .userPhoto(comment.getUser().getPhoto())
-                .comment(comment.getComment())
-                .build();
+    public PagedModel<CommentDTO> getComments(Long blogId, int pageNumber, int pageSize) {
+        Pageable pageable = GeneralMethod.getPageable("commentedAt", "desc", pageNumber, pageSize);
+        return new PagedModel<>(commentRepo.findCommentsByBlogId(blogId, pageable));
     }
 
     @Override

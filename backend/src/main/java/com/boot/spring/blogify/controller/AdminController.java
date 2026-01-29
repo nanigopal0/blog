@@ -1,6 +1,6 @@
 package com.boot.spring.blogify.controller;
 
-import com.boot.spring.blogify.entity.Admin;
+import com.boot.spring.blogify.entity.user.Admin;
 import com.boot.spring.blogify.service.AdminService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

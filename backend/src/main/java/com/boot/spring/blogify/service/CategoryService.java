@@ -1,7 +1,7 @@
 package com.boot.spring.blogify.service;
 
 import com.boot.spring.blogify.dto.CategoryDTO;
-import com.boot.spring.blogify.entity.Category;
+import com.boot.spring.blogify.entity.blog.Category;
 
 import java.util.List;
 

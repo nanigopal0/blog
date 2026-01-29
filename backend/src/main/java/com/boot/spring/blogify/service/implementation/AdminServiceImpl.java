@@ -2,8 +2,8 @@ package com.boot.spring.blogify.service.implementation;
 
 
 import com.boot.spring.blogify.configuration.CustomUserDetails;
-import com.boot.spring.blogify.dto.Role;
-import com.boot.spring.blogify.entity.Admin;
+import com.boot.spring.blogify.dto.auth.Role;
+import com.boot.spring.blogify.entity.user.Admin;
 import com.boot.spring.blogify.exception.UserAlreadyExistException;
 import com.boot.spring.blogify.exception.UserNotFoundException;
 import com.boot.spring.blogify.jwt.JwtService;
@@ -56,7 +56,7 @@ public class AdminServiceImpl implements AdminService {
         admin.setUsername(GeneralMethod.generateUsername(admin.getName()));
         Optional<Admin> adminOptional = adminRepo.findByEmail(admin.getEmail());
         try {
-            if (adminOptional.isPresent() || userServiceImpl.findUserByEmail() != null)
+            if (adminOptional.isPresent() || userServiceImpl.findUserByEmail(admin.getEmail()) != null)
                 throw new UserAlreadyExistException("Admin " + admin.getEmail() + " already exist!");
         } catch (UserNotFoundException ignored) {
         }
@@ -98,8 +98,8 @@ public class AdminServiceImpl implements AdminService {
         Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(admin.getEmail(), admin.getPassword()));
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         String token = jwtService.generateAccessToken(userDetails.getUserName(), userDetails.getFullName(),
-                userDetails.getId(), userDetails.getRole(), userDetails.getUsername());
-        cookieService.addTokenToCookie(response, token);
+                userDetails.getId(), userDetails.getRole(), userDetails.isUserVerified());
+        cookieService.addTokenToCookie(response, CookieService.JWT_COOKIE_NAME, token, JwtService.ACCESS_TOKEN_VALIDITY_IN_MINUTES);
     }
 
     @Override

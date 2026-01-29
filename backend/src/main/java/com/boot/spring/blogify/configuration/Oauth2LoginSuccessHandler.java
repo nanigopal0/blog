@@ -1,14 +1,12 @@
 package com.boot.spring.blogify.configuration;
 
-import com.boot.spring.blogify.dto.CurrentUserResponseDTO;
-import com.boot.spring.blogify.dto.UpdateProfile;
-import com.boot.spring.blogify.dto.UserRegisterRequestDTO;
-import com.boot.spring.blogify.entity.AuthMode;
-import com.boot.spring.blogify.exception.UserAlreadyExistException;
+import com.boot.spring.blogify.dto.auth.DefaultAuthProvider;
+import com.boot.spring.blogify.dto.auth.UserRegisterRequestDTO;
 import com.boot.spring.blogify.jwt.JwtService;
 import com.boot.spring.blogify.service.CookieService;
 import com.boot.spring.blogify.service.UserService;
-import jakarta.servlet.ServletException;
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -19,76 +17,94 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
 public class Oauth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserService userService;
-    private final CookieService cookieService;
     private final JwtService jwtService;
 
-    public Oauth2LoginSuccessHandler(@Lazy UserService userService, CookieService cookieService, JwtService jwtService) {
+
+    public Oauth2LoginSuccessHandler(@Lazy UserService userService, JwtService jwtService) {
         this.userService = userService;
-        this.cookieService = cookieService;
         this.jwtService = jwtService;
     }
 
+    /*
+        1. Get info from authentication principal
+        2. If user currently has an account (by accessing tokens) just link the existing user with the auth provider
+            else register or login
+        3. check if the user exists in the database by email,
+            if exists login the user otherwise register the user
+     */
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-            throws IOException, ServletException {
+            throws IOException {
+        String accessToken = null;
+        String refreshToken = null;
+
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(CookieService.JWT_COOKIE_NAME))
+                    accessToken = cookie.getValue();
+                if (cookie.getName().equals(CookieService.REFRESH_TOKEN_COOKIE_NAME))
+                    refreshToken = cookie.getValue();
+                if (accessToken != null && refreshToken != null) break;
+            }
+        }
+
+        // Get info
         OAuth2User principal = (OAuth2User) authentication.getPrincipal();
         String name = principal.getAttribute("name");
         String picture = principal.getAttribute("picture");
         String email = principal.getAttribute("email");
-        assert email != null;
-        UserRegisterRequestDTO user = new UserRegisterRequestDTO();
-        user.setPhoto(picture);
-        user.setName(name);
-        user.setEmail(email);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        try {
-            userService.register(user, AuthMode.OAUTH2);
-        } catch (UserAlreadyExistException e) {
-            log.debug("User already exist {}", e.getMessage());
-            CurrentUserResponseDTO dto = userService.updateUser(new UpdateProfile(name, picture, null));
+        String providerId = principal.getName();
+        String error = null;
 
-            String accessToken = jwtService.generateAccessToken(dto.getUsername(), dto.getName(),
-                    dto.getId(), dto.getRole().name(), email);
-            cookieService.addTokenToCookie(response, accessToken);
-            response.sendRedirect("https://blog-gama.vercel.app");
-        } catch (Exception e) {
-            // Return an error response
-            String redirectUrl = String.format(
-                    "https://blog-gama.vercel.app?message=%s",
-                    URLEncoder.encode("Error: " + e.getMessage(), StandardCharsets.UTF_8)
-            );
-            response.sendRedirect(redirectUrl);
-            return;
+        //Linking OAuth2 with existing account
+        if (accessToken != null && refreshToken != null) {
+            try {
+                Claims accessTokenClaims = jwtService.getClaims(accessToken);
+                Long authenticatedUserId = Long.parseLong(accessTokenClaims.getSubject());
+                userService.linkOAuth2(DefaultAuthProvider.GOOGLE, email, providerId, authenticatedUserId);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+                error = e.getMessage();
+            }
         }
 
+        // OAuth2 Login/Register
+        else {
+            try {
+                //login
+                if (userService.existsUserWithEmail(email)) {
+                    userService.loginOAuth2(email, providerId, DefaultAuthProvider.GOOGLE);
+                }
+                //register
+                else {
+                    UserRegisterRequestDTO registerRequest = new UserRegisterRequestDTO();
+                    registerRequest.setPhoto(picture);
+                    registerRequest.setName(name);
+                    registerRequest.setEmail(email);
+                    userService.registerFromOAuth2(registerRequest, providerId, DefaultAuthProvider.GOOGLE);
+                }
+            } catch (Exception e) {
+                log.error(e.getMessage());
+                error = e.getMessage();
+            }
+        }
 
-        /**
-         * Generate a temporary token with encoded email id and short duration(15s). This should immediately
-         * pass in the request body to get a jwt token.
-         **/
-//        Map<String, String> data = new HashMap<>();
-//        data.put("email", email);
-//        data.put("issuedAt", String.valueOf(System.currentTimeMillis()));
-//        String token = null;
-//        try {
-//            token = AESUtils.encryptKey(new ObjectMapper().writeValueAsString(data));
-//        } catch (Exception e) {
-//            log.error("onAuthenticationSuccess: {}", e.getMessage());
-//            response.sendRedirect("https://blog-gama.vercel.app");
-//        }
-//        response.setStatus(HttpServletResponse.SC_OK);
-//        response.sendRedirect("https://blog-gama.vercel.app?token=" + token);
-//        response.sendRedirect("http://localhost:5173?token=" + token);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        if (error != null)
+            response.sendRedirect("https://blog-gama.vercel.app?error=" + error);
+//            response.sendRedirect("http://localhost:5173?error=" + error);
+        else
+//            response.sendRedirect("http://localhost:5173");
+            response.sendRedirect("https://blog-gama.vercel.app");
     }
-
 
 }

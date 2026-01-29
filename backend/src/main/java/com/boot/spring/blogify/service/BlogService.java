@@ -1,31 +1,35 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.dto.BlogDataDTO;
-import com.boot.spring.blogify.dto.BlogOverviewDTO;
-import com.boot.spring.blogify.dto.BlogPostDTO;
-import org.springframework.data.domain.Page;
+import com.boot.spring.blogify.dto.blog.BlogDTO;
+import com.boot.spring.blogify.dto.blog.BlogPostDTO;
+import com.boot.spring.blogify.dto.blog.BlogSummaryDTO;
+import com.boot.spring.blogify.dto.blog.UpdateBlogRequest;
+import com.boot.spring.blogify.entity.blog.BlogData;
+import org.springframework.data.web.PagedModel;
 
 public interface BlogService {
 
     void createNewBlog(BlogPostDTO blog);
 
-    BlogDataDTO getBlogById(Long id);
+    BlogDTO getBlogById(Long id);
 
-    void updateBlog(BlogDataDTO blog);
+    void updateBlog(Long blogId, UpdateBlogRequest request);
 
     Long countTotalBlogsByUserId(Long userId);
+
+    BlogData findBlogById(Long blogId);
 
     void deleteBlog(Long blogId);
 
     void deleteAllBlogsByUserId(Long userId);
 
-    Page<BlogOverviewDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize);
+    PagedModel<BlogSummaryDTO> searchBlogs(String title, String sortBy, String sortOrder, int pageNumber, int pageSize);
 
-    Page<BlogOverviewDTO> getAllBlogsByCategory(Long categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize);
+    PagedModel<BlogSummaryDTO> getAllBlogsByCategory(Long categoryId, String sortOrder, String sortBy, int pageNumber, int pageSize);
 
     //Get all blogs posted by the user
-    Page<BlogOverviewDTO> getAllBlogsOfUser(Long userid, String sortBy, String sortOrder, int pageNumber, int pageSize);
+    PagedModel<BlogSummaryDTO> getAllBlogsOfUser(Long userid, String sortBy, String sortOrder, int pageNumber, int pageSize);
 
-    Page<BlogOverviewDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder);
+    PagedModel<BlogSummaryDTO> getAllBlogs(int pageNumber, int pageSize, String sortBy, String sortOrder);
 
 }

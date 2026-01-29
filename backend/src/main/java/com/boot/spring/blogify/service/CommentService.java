@@ -1,16 +1,17 @@
 package com.boot.spring.blogify.service;
 
 import com.boot.spring.blogify.dto.CommentDTO;
+import org.springframework.data.web.PagedModel;
 
 public interface CommentService {
 
-    CommentDTO saveComment(CommentDTO comment);
+    void saveComment(String comment, Long blogId);
 
-    String deleteComment(Long commentID);
+    void deleteComment(Long commentID);
 
-    String updateComment(CommentDTO comment);
+    void updateComment(Long commentId, String comment);
 
-    CommentDTO getComment(Long commentID);
+    PagedModel<CommentDTO> getComments(Long blogId, int pageNumber, int pageSize);
 
     void deleteAllCommentsByBlogId(Long blogId);
 

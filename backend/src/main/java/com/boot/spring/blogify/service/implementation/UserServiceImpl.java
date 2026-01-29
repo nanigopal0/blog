@@ -1,44 +1,45 @@
 package com.boot.spring.blogify.service.implementation;
 
-import com.boot.spring.blogify.configuration.CustomUserDetails;
-import com.boot.spring.blogify.dto.*;
-import com.boot.spring.blogify.entity.AuthMode;
-import com.boot.spring.blogify.entity.Reason;
-import com.boot.spring.blogify.entity.User;
+import com.boot.spring.blogify.dto.auth.*;
+import com.boot.spring.blogify.dto.user.*;
+import com.boot.spring.blogify.entity.auth.AuthMode;
+import com.boot.spring.blogify.entity.auth.AuthProvider;
+import com.boot.spring.blogify.entity.otp.OTP;
+import com.boot.spring.blogify.entity.otp.Reason;
+import com.boot.spring.blogify.entity.user.User;
 import com.boot.spring.blogify.exception.PasswordException;
 import com.boot.spring.blogify.exception.UserAlreadyExistException;
 import com.boot.spring.blogify.exception.UserNotFoundException;
-import com.boot.spring.blogify.exception.UserNotVerifiedException;
 import com.boot.spring.blogify.jwt.JwtService;
+import com.boot.spring.blogify.repositories.AuthModeRepo;
+import com.boot.spring.blogify.repositories.AuthProviderRepo;
 import com.boot.spring.blogify.repositories.UserRepo;
-import com.boot.spring.blogify.service.*;
-import com.boot.spring.blogify.util.AESUtils;
+import com.boot.spring.blogify.service.AdminService;
+import com.boot.spring.blogify.service.CookieService;
+import com.boot.spring.blogify.service.UserService;
 import com.boot.spring.blogify.util.EntityToDTO;
 import com.boot.spring.blogify.util.GeneralMethod;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authentication.*;
+import org.springframework.data.web.PagedModel;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -48,114 +49,261 @@ public class UserServiceImpl implements UserService {
     private final UserRepo userRepo;
     private final PasswordEncoder passwordEncoder;
     private final AdminService adminService;
-    private final BlogService blogService;
-    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final CommentService commentService;
     private final HttpServletResponse response;
     private final CookieService cookieService;
     private final EntityToDTO entityToDTO;
-    private final FollowerService followerService;
-    private final BlogReactionService blogReactionService;
     private final OTPService otpService;
+    private final AuthModeRepo authModeRepo;
+    private final AuthProviderRepo authProviderRepo;
 
     public UserServiceImpl(
-            UserRepo userRepo, PasswordEncoder passwordEncoder, BlogService blogService, @Lazy AdminService adminService,
-            AuthenticationManager authenticationManager, JwtService jwtService, CommentService commentService,
+            UserRepo userRepo, PasswordEncoder passwordEncoder, @Lazy AdminService adminService,
+            JwtService jwtService,
             HttpServletResponse response, CookieService cookieService,
-            EntityToDTO entityToDTO, FollowerService followerService, BlogReactionService blogReactionService, OTPService otpService) {
+            EntityToDTO entityToDTO,
+            OTPService otpService, AuthModeRepo authModeRepo, AuthProviderRepo authProviderRepo) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
-        this.blogService = blogService;
         this.adminService = adminService;
-        this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.commentService = commentService;
         this.response = response;
         this.cookieService = cookieService;
         this.entityToDTO = entityToDTO;
-        this.followerService = followerService;
-        this.blogReactionService = blogReactionService;
         this.otpService = otpService;
+        this.authModeRepo = authModeRepo;
+        this.authProviderRepo = authProviderRepo;
     }
 
+
+    @Override
     public User findUserByEmail(String email) {
         return userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
     }
 
     @Override
-    public CurrentUserResponseDTO findUserByEmail() {
-        CustomUserDetails currentUser = GeneralMethod.getCurrentUser();
-        User user = userRepo.findByEmail(currentUser.getUsername()).orElseThrow(() -> new UserNotFoundException(currentUser.getUsername()));
-        Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-        Long totalFollower = followerService.getFollowerCount(user.getId());
-        Long totalFollowing = followerService.getFollowingCount(user.getId());
-        return entityToDTO.convertUserToCurrentUserResponseDTO(user, totalFollowing, totalFollower, totalBlogs);
+    public User findById(Long id) {
+        return userRepo.findById(id).orElseThrow(() -> new UserNotFoundException(" Id: " + id));
     }
 
+    /*
+        Only for Local authentication(Email, Password)
+        1. Find user by email
+        2. If found, check the user supports this authentication mode (Local)
+            otherwise throw exception to a message different auth mode
+        3. If supported match password
+        4. Check if the user is verified otherwise send verification OTP
+        5. If the user is verified, set an access token and refresh token in the cookie also in the database
+            and return the user
+     */
     @Override
-    public LoginResponse login(SignInRequestDTO signInRequest) {
-        User loadedUser = userRepo.findByEmail(signInRequest.getEmail()).orElseThrow(() -> new UserNotFoundException(signInRequest.getEmail()));
-        if (!loadedUser.isUserVerified()) {
-            otpService.generateOTP(loadedUser.getId(), loadedUser.getName(), loadedUser.getEmail(), Reason.USER_VERIFICATION);
-            throw new UserNotVerifiedException(signInRequest.getEmail() + " is not verified yet! OTP sent to your email");
-        }
-        if (loadedUser.getAuthMode() == AuthMode.OAUTH2)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public BasicUserInfo login(SignInRequestDTO signInRequest) {
+        // 1. Find user by email
+        User loadedUser = findUserByEmail(signInRequest.getEmail());
+
+        // 2. Check user has Local authentication mode
+        List<AuthMode> authModes = authModeRepo.findAuthModesByUser_Id(loadedUser.getId()).stream().filter(authMode ->
+                authMode.getProvider().getProviderName().equals(DefaultAuthProvider.LOCAL.name())
+        ).toList();
+        if (authModes.isEmpty())
             throw new BadCredentialsException("Different authentication mode.Use OAuth2 provider to login!");
-        Authentication authRequest = new UsernamePasswordAuthenticationToken(signInRequest.getEmail(), signInRequest.getPassword());
-        Authentication authResponse = authenticationManager.authenticate(authRequest);
-        if (authResponse.isAuthenticated()) {
-            CustomUserDetails userDetails = (CustomUserDetails) authResponse.getPrincipal();
-            String accessToken = jwtService.generateAccessToken(userDetails.getUserName(), userDetails.getFullName(),
-                    userDetails.getId(), userDetails.getRole(), userDetails.getUsername());
-            String refreshToken = jwtService.generateRefreshToken(userDetails.getId(), userDetails.getRole(),
-                    userDetails.getUsername(), userDetails.getUserName());
+        AuthMode authMode = authModes.getFirst();
+        if (authMode.getProviderUserId() != null)
+            throw new BadCredentialsException("Invalid authentication provider!");
 
-            loadedUser.setRefreshToken(refreshToken);
-            userRepo.save(loadedUser);
-            cookieService.addTokenToCookie(response, accessToken);
+        // 3. Match password
+        if (!passwordEncoder.matches(signInRequest.getPassword(), loadedUser.getPassword()))
+            throw new BadCredentialsException("Invalid credentials");
 
-            Long totalBlogs = blogService.countTotalBlogsByUserId(loadedUser.getId());
-            Long totalFollower = followerService.getFollowerCount(loadedUser.getId());
-            Long totalFollowing = followerService.getFollowingCount(loadedUser.getId());
-            return LoginResponse.builder()
-                    .user(entityToDTO.convertUserToCurrentUserResponseDTO(loadedUser, totalFollowing, totalFollower, totalBlogs))
-                    .refreshToken(refreshToken)
-                    .build();
-        } else throw new BadCredentialsException("Authentication failed");
+        // 4. Check user is verified
+        if (!loadedUser.isUserVerified()) {
+            otpService.generateOTP(loadedUser, loadedUser.getEmail(), Reason.USER_VERIFICATION);
+            return null;
+        }
+
+        // 5. Send access token and refresh token in the cookie and return the user
+        sendAndSaveToken(loadedUser);
+        return new BasicUserInfo(loadedUser.getId(), loadedUser.getName(), loadedUser.getPhoto(), loadedUser.getRole().name(),
+                loadedUser.isUserVerified(), loadedUser.getUsername(), loadedUser.getBio());
     }
 
+    /*
+        ** Only for Local authentication(Email, Password)
+        1. Find by email if user exists throw UserAlreadyExistException
+        2. Validate the password criteria and generate the username
+        3. Create new user and store in users table
+        4. Get all auth provider
+        5. Store the user as Local authentication mode in auth_mode table
+        6. Store the auth mode id into user table
+        7. Send the verification OTP via email
+     */
     @Override
-    public String register(UserRegisterRequestDTO user, AuthMode authMode) {
-        if (isUserAuthenticated())
-            throw new UserAlreadyExistException(user.getEmail());
+    @Transactional
+    public void register(UserRegisterRequestDTO user) {
+        // 1. Find user by email
         try {
             Optional<User> dbUser = userRepo.findByEmail(user.getEmail());
             if (dbUser.isPresent() || adminService.findAdminByEmail(user.getEmail()) != null)
                 throw new UserAlreadyExistException(user.getEmail());
         } catch (UserNotFoundException ignored) {
         }
-        if(!GeneralMethod.validatePassword(user.getPassword()))
+
+        // 2. Validate password
+        if (!GeneralMethod.validatePassword(user.getPassword()))
             throw new PasswordException();
+
+        // 3. Create new user
         User newUser = new User();
-        newUser.setAuthMode(authMode);
         newUser.setEmail(user.getEmail());
         newUser.setName(user.getName());
         newUser.setPhoto(user.getPhoto());
-        if (authMode == AuthMode.EMAIL_PASSWORD)
-            newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         newUser.setUsername(GeneralMethod.generateUsername(user.getName()));
         newUser.setRole(Role.USER);
-        newUser.setUserVerified(authMode == AuthMode.OAUTH2);
+
         User savedUser = userRepo.save(newUser);
-        if (authMode == AuthMode.EMAIL_PASSWORD)
-            otpService.generateOTP(savedUser.getId(), savedUser.getName(), savedUser.getEmail(), Reason.USER_VERIFICATION);
-        return newUser.getEmail() + " successfully registered! Verification code sent to your email";
+
+        // 4. Get auth provider by name (LOCAL)
+        authProviderRepo.findAuthProviderByProviderName(DefaultAuthProvider.LOCAL.name())
+                .ifPresent(authProvider -> {
+                    // 5. Store the user as Local authentication mode in auth_mode table
+                    AuthMode authMode = new AuthMode();
+                    authMode.setUser(savedUser);
+                    authMode.setProvider(authProvider);
+                    authMode.setLinkedAt(LocalDateTime.now());
+                    AuthMode savedAuthMode = authModeRepo.save(authMode);
+
+                    // 6. Store the auth mode id into user table
+                    savedUser.setDefaultAuthMode(savedAuthMode);
+                    userRepo.save(savedUser);
+                });
+
+        // 7. Ssend verification OTP via email
+        otpService.generateOTP(savedUser, savedUser.getEmail(), Reason.USER_VERIFICATION);
+    }
+
+    /*
+        ** Only for OAuth authentication(Google)
+        1. Create new user and store in users table
+        2. Get all auth provider
+        3. Store the user as OAuth authentication mode (Google) in auth_mode table
+        4. Store the auth mode id into user table
+        5. Send the access token and refresh token into cookie
+     */
+    @Override
+    @Transactional
+    public void registerFromOAuth2(UserRegisterRequestDTO user, String providerUserId, DefaultAuthProvider provider) {
+        // 1. Create new user
+        User newUser = new User();
+        newUser.setEmail(user.getEmail());
+        newUser.setName(user.getName());
+        newUser.setPhoto(user.getPhoto());
+        newUser.setUsername(GeneralMethod.generateUsername(user.getName()));
+        newUser.setRole(Role.USER);
+        newUser.setUserVerified(true);
+
+        User savedUser = userRepo.save(newUser);
+
+        // 2. Get auth provider by name
+        AuthProvider authProvider = authProviderRepo.findAuthProviderByProviderName(provider.name())
+                .orElseThrow(() -> new RuntimeException(provider.name() + " not found!"));
+
+        // 3. Store the user as OAuth authentication mode in auth_mode table
+        AuthMode authMode = new AuthMode();
+        authMode.setUser(savedUser);
+        authMode.setProvider(authProvider);
+        authMode.setProviderUserId(providerUserId);
+        authMode.setLinkedAt(LocalDateTime.now());
+        AuthMode savedAuthMode = authModeRepo.save(authMode);
+
+        // 4. Store the auth mode id into user table
+        savedUser.setDefaultAuthMode(savedAuthMode);
+
+        // 5. Send the access token and refresh token into cookie
+        sendAndSaveToken(savedUser);
+    }
+
+    private void sendAndSaveToken(User user) {
+        String accessToken = jwtService.generateAccessToken(user.getUsername(), user.getName(),
+                user.getId(), user.getRole().name(), user.isUserVerified());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getRole().name(),
+                user.getUsername(), user.isUserVerified());
+        user.setRefreshToken(refreshToken);
+        userRepo.save(user);
+        cookieService.addTokenToCookie(response, CookieService.JWT_COOKIE_NAME, accessToken, JwtService.ACCESS_TOKEN_VALIDITY_IN_MINUTES);
+        cookieService.addTokenToCookie(response, CookieService.REFRESH_TOKEN_COOKIE_NAME, refreshToken, JwtService.REFRESH_TOKEN_VALIDITY_IN_DAYS * 1440);
+    }
+
+    /*
+        1. Find user by email
+        2. If found, check the user supports this authentication mode (Google) and match the provider user id
+        3. Set the access token and refresh token into cookie
+     */
+    @Override
+    @Transactional
+    public void loginOAuth2(String email, String providerUserId, DefaultAuthProvider provider) {
+        // 1. Find user by email
+        User user = findUserByEmail(email);
+
+        // 2. Check the authentication mode
+        List<AuthMode> authModes = authModeRepo.findAuthModesByUser_Id(user.getId()).stream().filter(authMode ->
+                authMode.getProvider().getProviderName().equals(provider.name())).toList();
+        if (authModes.isEmpty()) throw new BadCredentialsException("Different authentication provider!");
+
+        AuthMode authMode = authModes.getFirst();
+
+        //Update the provider user id as it does not have
+        if (authMode.getProviderUserId() != null && authMode.getProviderUserId().equals(String.valueOf(user.getId()))) {
+            authMode.setProviderUserId(providerUserId);
+            authModeRepo.save(authMode);
+        }
+        if (authMode.getProviderUserId() != null && authMode.getProviderUserId().equals(providerUserId)) {
+            sendAndSaveToken(user);
+        } else throw new BadCredentialsException("Invalid credentials");
+
     }
 
     @Transactional
-    public boolean verifyUser(String email, String OTP) {
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
+    @Override
+    public void linkOAuth2(DefaultAuthProvider provider, String oAuthEmailId, String providerUserId, Long id) {
+        User user = findById(id);
+        if (!user.getEmail().equals(oAuthEmailId)) throw new RuntimeException("Email does not match");
+
+        AuthProvider authProvider = authProviderRepo.findAuthProviderByProviderName(provider.name())
+                .orElseThrow(() -> new RuntimeException(provider.name() + " not found!"));
+
+        AuthMode authMode = new AuthMode();
+        authMode.setUser(user);
+        authMode.setProvider(authProvider);
+        authMode.setProviderUserId(providerUserId);
+        authMode.setLinkedAt(LocalDateTime.now());
+        authModeRepo.save(authMode);
+    }
+
+    @Transactional
+    @Override
+    public void unlinkAuthProvider(Long authModeId) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        AuthMode authMode = authModeRepo.findById(authModeId)
+                .orElseThrow(() -> new RuntimeException(authModeId + " not found!"));
+
+        User user = findById(userId);
+        if (user.getDefaultAuthMode() != null && user.getDefaultAuthMode().getId().equals(authMode.getId())) {
+            throw new RuntimeException("Cannot unlink provider. It is the default authentication mode.");
+        }
+
+        String providerName = authMode.getProvider().getProviderName();
+        if (providerName.equals(DefaultAuthProvider.LOCAL.name())) {
+            user.setPassword(null);
+            userRepo.save(user);
+        }
+        authModeRepo.delete(authMode);
+    }
+
+    @Transactional
+    public boolean verifyUser(String OTP, String email) {
+        User user = findUserByEmail(email);
         if (otpService.verifyOTP(user.getId(), OTP, Reason.USER_VERIFICATION)) {
             user.setUserVerified(true);
             userRepo.save(user);
@@ -167,16 +315,17 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void forgotPasswordOTP(String email) {
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-        otpService.generateOTP(user.getId(), user.getName(), user.getEmail(), Reason.FORGOT_PASSWORD);
+        User user = findUserByEmail(email);
+        otpService.generateOTP(user, user.getEmail(), Reason.FORGOT_PASSWORD);
     }
 
     @Override
     @Transactional
     public void resetPassword(ResetPasswordDTO dto) {
-        User user = userRepo.findByEmail(dto.getEmail()).orElseThrow(() -> new UserNotFoundException(dto.getEmail()));
-        if (otpService.verifyOTP(user.getId(), dto.getOTP(), Reason.FORGOT_PASSWORD)) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        User user = findUserByEmail(dto.email());
+        if (!GeneralMethod.validatePassword(dto.newPassword())) throw new PasswordException();
+        if (otpService.verifyOTP(user.getId(), dto.OTP(), Reason.FORGOT_PASSWORD)) {
+            user.setPassword(passwordEncoder.encode(dto.newPassword()));
             userRepo.save(user);
         } else throw new BadCredentialsException("Invalid OTP");
     }
@@ -184,71 +333,138 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void generateOTPForAccountDeletion() {
-        User user = getUser();
-        otpService.generateOTP(user.getId(), user.getName(), user.getEmail(), Reason.DELETE_ACCOUNT);
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(id);
+        otpService.generateOTP(user, user.getEmail(), Reason.DELETE_ACCOUNT);
     }
 
     @Override
     @Transactional
     public void verifyOTPAndDeleteUser(String otp) {
-        User user = getUser();
-        if (otpService.verifyOTP(user.getId(), otp, Reason.DELETE_ACCOUNT)) {
-            deleteUserById(user.getId());
+        long id = GeneralMethod.findAuthenticatedUserId();
+        if (otpService.verifyOTP(id, otp, Reason.DELETE_ACCOUNT)) {
+            deleteUserById(id);
+            cookieService.deleteJWTFromCookie(response, CookieService.JWT_COOKIE_NAME);
+            cookieService.deleteJWTFromCookie(response, CookieService.REFRESH_TOKEN_COOKIE_NAME);
         } else throw new BadCredentialsException("Invalid OTP");
     }
 
     @Override
-    public void updateEmailOtp(UpdateEmailDTO dto) {
-        User user = getUser();
+    public boolean existsUserWithEmail(String email) {
+        return userRepo.existsUserByEmail(email);
+    }
+
+
+    /*
+    Issue - If user logged in through oauth provider, after changing email 2 different email ids will be there
+     */
+    @Override
+    public void OTPForUpdateEmail(UpdateEmailDTO dto) {
+        if (dto.password() == null) throw new PasswordException("Set password before updating email");
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(id);
         if (passwordEncoder.matches(dto.password(), user.getPassword()) && dto.email().equals(user.getEmail())) {
-            if (userRepo.existsUserByEmail(dto.newEmail())) throw new UserAlreadyExistException(dto.newEmail());
-            otpService.generateOTP(user.getId(), user.getName(), user.getEmail(), Reason.UPDATE_EMAIL);
+            if (existsUserWithEmail(dto.newEmail())) throw new UserAlreadyExistException(dto.newEmail());
+            otpService.generateOTP(user, dto.newEmail(), Reason.UPDATE_EMAIL);
         } else throw new BadCredentialsException("Invalid credentials");
     }
 
     @Override
     @Transactional
-    public void verifyAndUpdateEmail(EmailVerificationDTO dto) {
-        if (userRepo.existsUserByEmail(dto.email())) throw new UserAlreadyExistException(dto.email());
-        User user = getUser();
-        if (otpService.verifyOTP(user.getId(), dto.OTP(), Reason.UPDATE_EMAIL)) {
-            user.setEmail(dto.email());
-            String token = jwtService.generateAccessToken(user.getUsername(), user.getName(),
-                    user.getId(), user.getRole().name(), dto.email());
-            cookieService.addTokenToCookie(response, token);
+    public void verifyAndUpdateEmail(String otp) {
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(id);
+        if (otpService.verifyOTP(user.getId(), otp, Reason.UPDATE_EMAIL)) {
+            OTP otpObj = otpService.getEmailFromOTPObj(user.getId(), Reason.UPDATE_EMAIL);
+            // Check if the user has OAuth provider, if found delete them all and the user can login using only LOCAL provider
+            authModeRepo.findAuthModesByUser_Id(id).stream().filter(authMode ->
+                    !authMode.getProvider().getProviderName().equals(DefaultAuthProvider.LOCAL.name())
+            ).forEach(authMode -> {
+                if (user.getDefaultAuthMode() != null && user.getDefaultAuthMode().equals(authMode)) {
+                    user.setDefaultAuthMode(null);
+                }
+                authModeRepo.delete(authMode);
+            });
+
+            user.setEmail(otpObj.getEmail());
+            sendAndSaveToken(user);
         } else throw new BadCredentialsException("Invalid OTP");
     }
 
     @Override
-    public void generateAccessTokenFromRefreshToken(String refreshToken) {
-        if (refreshToken == null) throw new BadCredentialsException("Refresh token is null");
-        String accessToken = jwtService.validateRefreshTokenAndGenerateAccessToken(refreshToken);
-        cookieService.addTokenToCookie(response, accessToken);
+    public BasicUserInfo extractBasicInfo() {
+        Long authenticatedUserId = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(authenticatedUserId);
+        return new BasicUserInfo(user.getId(), user.getName(),
+                user.getPhoto(), user.getRole().name(), user.isUserVerified(), user.getUsername(), user.getBio());
     }
 
     @Override
-    public UserDTO findUserByUsername(String username) {
+    public UserDTO getCurrentUserInfo() {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        return userRepo.findCurrentUserById(userId);
+    }
+
+    /*
+        1. Find user by id
+        2. If the user does not have LOCAL Auth Provider, then only proceed further
+        3. If the password is null, then only set password otherwise already set password
+     */
+    @Override
+    @Transactional
+    public void setPassword(String password) {
+        if (!GeneralMethod.validatePassword(password)) throw new PasswordException();
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        authModeRepo.findAuthModesByUser_Id(userId).forEach(authMode -> {
+            if (authMode.getProvider().getProviderName().equals(DefaultAuthProvider.LOCAL.name()))
+                throw new RuntimeException("Cannot set password for LOCAL authentication mode");
+        });
+        User user = findById(userId);
+        if (user.getPassword() != null) throw new RuntimeException("Password already set");
+        AuthProvider provider = authProviderRepo.findAuthProviderByProviderName(DefaultAuthProvider.LOCAL.name()).orElseThrow(() -> new RuntimeException("Local authentication provider not found"));
+        user.setPassword(passwordEncoder.encode(password));
+        AuthMode authMode = new AuthMode();
+        authMode.setUser(user);
+        authMode.setProvider(provider);
+        authMode.setLinkedAt(LocalDateTime.now());
+        authModeRepo.save(authMode);
+        userRepo.save(user);
+    }
+
+    @Override
+    public List<AuthProviderDTO> getAllLinkedAuthProvider() {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        return authModeRepo.findAuthModesByUser_Id(userId)
+                .stream().map(authMode -> {
+                    AuthProvider provider = authMode.getProvider();
+                    return new AuthProviderDTO(authMode.getId(), provider.getProviderName());
+                }).toList();
+    }
+
+    @Transactional
+    @Override
+    public void changeDefaultAuthMode(Long authModeId) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        AuthMode authMode = authModeRepo.findById(authModeId).orElseThrow(() -> new NoSuchElementException("Invalid auth mode id"));
+        if (!Objects.equals(authMode.getUser().getId(), userId)) throw new AccessDeniedException("Invalid user id");
+        User user = findById(userId);
+        user.setDefaultAuthMode(authMode);
+        userRepo.save(user);
+    }
+
+    @Override
+    public BasicUserInfo findUserByUsername(String username) {
         User user = userRepo.findByUsername(username).orElseThrow(() -> new UserNotFoundException(username));
-        Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-        Long totalFollower = followerService.getFollowerCount(user.getId());
-        Long totalFollowing = followerService.getFollowingCount(user.getId());
-        return entityToDTO.convertUserToUserDTO(user, totalBlogs, totalFollowing, totalFollower);
-    }
-
-    @Override
-    public UserDTO findUserById(Long id) {
-        User user = userRepo.findById(id).orElseThrow(() -> new UserNotFoundException(" Id: " + id));
-        Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-        Long totalFollower = followerService.getFollowerCount(user.getId());
-        Long totalFollowing = followerService.getFollowingCount(user.getId());
-        return entityToDTO.convertUserToUserDTO(user, totalBlogs, totalFollowing, totalFollower);
+        return entityToDTO.convertUserToBasicUserInfo(user);
     }
 
     @Override
     @Transactional
-    public CurrentUserResponseDTO updateUser(UpdateProfile updateUser) {
+    public BasicUserInfo updateUser(UpdateProfile updateUser) {
         if (!isUserAuthenticated()) return null;
-        User user = getUser();
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(id);
+
         if (updateUser.name() != null && !updateUser.name().isEmpty())
             user.setName(updateUser.name());
 
@@ -259,10 +475,7 @@ public class UserServiceImpl implements UserService {
             user.setBio(updateUser.bio());
 
         User updatedUser = userRepo.save(user);
-        Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-        Long totalFollower = followerService.getFollowerCount(user.getId());
-        Long totalFollowing = followerService.getFollowingCount(user.getId());
-        return entityToDTO.convertUserToCurrentUserResponseDTO(updatedUser, totalFollowing, totalFollower, totalBlogs);
+        return entityToDTO.convertUserToBasicUserInfo(updatedUser);
     }
 
     @Override
@@ -270,91 +483,47 @@ public class UserServiceImpl implements UserService {
     public void changePassword(UpdatePasswordDTO dto) {
         if (!GeneralMethod.validatePassword(dto.newPassword()))
             throw new PasswordException();
-        User user = getUser();
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User user = findById(id);
         if (user.getPassword() != null && !passwordEncoder.matches(dto.oldPassword(), user.getPassword()))
             throw new BadCredentialsException("Current password is wrong!");
         user.setPassword(passwordEncoder.encode(dto.newPassword()));
         userRepo.save(user);
     }
 
-    public User getUser() {
-        CustomUserDetails currentUser = GeneralMethod.getCurrentUser();
-        return userRepo.findById(currentUser.getId()).orElseThrow(() -> new UserNotFoundException("Id: " + currentUser.getId()));
-    }
-
-    public boolean isUserAuthenticated() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) &&
-                !(authentication instanceof OAuth2AuthenticationToken) && authentication.isAuthenticated();
-    }
-
-
-    private void deleteUserById(Long id) {
-        userRepo.findById(id).orElseThrow(() -> new UserNotFoundException(" Id: " + id));
-        blogReactionService.deleteAllBlogReactionsByUserId(id);
-        followerService.deleteAllFollowersByUserId(id);
-        followerService.deleteAllFollowingsByUserId(id);
-        blogService.deleteAllBlogsByUserId(id);
-        commentService.deleteAllCommentsByUserId(id);
-        userRepo.deleteById(id);
+    @Override
+    public List<BasicUserInfo> findAllUser() {
+        return userRepo.findAll().stream().map(entityToDTO::convertUserToBasicUserInfo).toList();
     }
 
     @Override
-    public List<CurrentUserResponseDTO> findAllUser() {
-        return userRepo.findAll().stream().map(user -> {
-                    Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-                    Long totalFollower = followerService.getFollowerCount(user.getId());
-                    Long totalFollowing = followerService.getFollowingCount(user.getId());
-                    return entityToDTO.convertUserToCurrentUserResponseDTO(user, totalBlogs, totalFollowing, totalFollower);
-                }
-        ).toList();
-    }
-
-
-    @Override
-    public Page<UserOverviewDTO> searchUsers(String name, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+    public PagedModel<UserOverviewDTO> searchUsers(String name, String sortBy, String sortOrder, int pageNumber, int pageSize) {
+        GeneralMethod.validateSortByType(sortBy, User.class);
         Pageable pageable = GeneralMethod.getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return userRepo.findUsersByNameStartsWith(name, pageable);
+        return new PagedModel<>(userRepo.findUsersByNameStartsWith(name, pageable));
     }
 
 
     @Override
     public void logout() {
-        User currentUser = getUser();
+        long id = GeneralMethod.findAuthenticatedUserId();
+        User currentUser = findById(id);
         currentUser.setRefreshToken(null);
         userRepo.save(currentUser);
-        cookieService.deleteJWTFromCookie(response);
+        cookieService.deleteJWTFromCookie(response, CookieService.JWT_COOKIE_NAME);
+        cookieService.deleteJWTFromCookie(response, CookieService.REFRESH_TOKEN_COOKIE_NAME);
     }
 
-    @Override
-    public LoginResponse generateJWTTokenAfterOAuth2Success(String token) throws JsonProcessingException,
-            InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
-            NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
-
-        String decryptedData = AESUtils.decryptKey(token);
-        Map<String, String> data = new ObjectMapper().readValue(decryptedData, new TypeReference<>() {
-        });
-        String email = data.get("email");
-        long issuedAt = Long.parseLong(data.get("issuedAt"));
-        if (System.currentTimeMillis() - issuedAt > 15000) {
-            throw new CredentialsExpiredException("Token expired!");
-        }
-        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email));
-        if (user.getEmail().equals(email)) {
-            String refreshToken = jwtService.generateRefreshToken(user.getId(), user.getRole().name(),
-                    user.getEmail(), user.getUsername());
-            user.setRefreshToken(refreshToken);
-            userRepo.save(user);
-            String jwtToken = jwtService.generateAccessToken(user.getUsername(), user.getName(), user.getId(),
-                    user.getRole().name(), user.getEmail());
-            cookieService.addTokenToCookie(response, jwtToken);
-            Long totalBlogs = blogService.countTotalBlogsByUserId(user.getId());
-            Long totalFollower = followerService.getFollowerCount(user.getId());
-            Long totalFollowing = followerService.getFollowingCount(user.getId());
-            return LoginResponse.builder().refreshToken(refreshToken)
-                    .user(entityToDTO.convertUserToCurrentUserResponseDTO(user, totalBlogs, totalFollowing, totalFollower))
-                    .build();
-        } else throw new BadCredentialsException("Email not match!");
+    public boolean isUserAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && !(authentication instanceof AnonymousAuthenticationToken) &&
+                authentication.isAuthenticated() && (authentication instanceof OAuth2AuthenticationToken ||
+                authentication instanceof UsernamePasswordAuthenticationToken);
     }
 
+
+    private void deleteUserById(Long id) {
+        authModeRepo.deleteAuthModesByUserId(id);
+        userRepo.deleteById(id);
+    }
 }

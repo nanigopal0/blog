@@ -1,17 +1,13 @@
 package com.boot.spring.blogify.service.implementation;
 
-import com.boot.spring.blogify.configuration.CustomUserDetails;
-import com.boot.spring.blogify.dto.UserOverviewDTO;
-import com.boot.spring.blogify.entity.Follow;
-import com.boot.spring.blogify.entity.User;
-import com.boot.spring.blogify.exception.UserNotFoundException;
+import com.boot.spring.blogify.dto.FollowOverviewDTO;
+import com.boot.spring.blogify.dto.FollowResponseDTO;
+import com.boot.spring.blogify.dto.user.UserOverviewDTO;
 import com.boot.spring.blogify.repositories.FollowerRepo;
-import com.boot.spring.blogify.repositories.UserRepo;
 import com.boot.spring.blogify.service.FollowerService;
 import com.boot.spring.blogify.util.GeneralMethod;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.web.PagedModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,63 +15,50 @@ import org.springframework.transaction.annotation.Transactional;
 public class FollowerServiceImpl implements FollowerService {
 
     private final FollowerRepo followerRepo;
-    private final UserRepo userRepo;
 
 
-    public FollowerServiceImpl(FollowerRepo followerRepo, UserRepo userRepo) {
+    public FollowerServiceImpl(FollowerRepo followerRepo) {
         this.followerRepo = followerRepo;
-        this.userRepo = userRepo;
-
-    }
-
-    private CustomUserDetails getCurrentUser() {
-        return (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 
     @Transactional
     @Override
-    public void follow(Long followedId) {
-        CustomUserDetails currentUser = getCurrentUser();
-        if (currentUser.getId().equals(followedId)) {
+    public FollowResponseDTO follow(Long followedId) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        if (userId.equals(followedId))
             throw new RuntimeException("You can't follow yourself");
-        }
-        User current = findUserById(currentUser.getId());
-        User followedUser = findUserById(followedId);
-
-        Follow follow = new Follow();
-        follow.setFollowed(followedUser);
-        follow.setFollower(current);
-        followerRepo.save(follow);
+        followerRepo.saveFollow(followedId, userId);
+        return new FollowResponseDTO(true, getFollowerCount(followedId));
     }
 
-    private User findUserById(Long userId) {
-        return userRepo.findById(userId).orElseThrow(() ->
-                new UserNotFoundException(" Id: " + userId));
-    }
 
     @Override
     @Transactional
-    public void unfollow(Long followedId) {
-        CustomUserDetails currentUser = getCurrentUser();
-        followerRepo.deleteFollowByFollower_IdAndFollowed_Id(currentUser.getId(), followedId);
+    public FollowResponseDTO unfollow(Long followedId) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        Integer rowsAffected = followerRepo.deleteFollowByFollower_IdAndFollowed_Id(userId, followedId);
+        if (rowsAffected <= 0)
+            throw new RuntimeException("User id: " + followedId + " not found or you already unfollow this user!");
+        return new FollowResponseDTO(false, getFollowerCount(followedId));
     }
 
     @Override
-    public boolean isFollowing(Long userId, Long followedId) {
-        return followerRepo.existsFollowByFollowedIdAndFollowerId(followedId, userId);
+    public FollowOverviewDTO getFollowInfo(Long followedId) {
+        Long userId = GeneralMethod.findAuthenticatedUserId();
+        return followerRepo.existsFollowByFollowedIdAndUserId(followedId, userId);
     }
 
     @Override
-    public Page<UserOverviewDTO> getAllFollowers(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
-        Pageable pageable = GeneralMethod.getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return followerRepo.findByFollowed_Id(userId, pageable);
+    public PagedModel<UserOverviewDTO> getAllFollowers(Long userId,  int pageNumber, int pageSize) {
+        Pageable pageable = GeneralMethod.getPageable(null, null, pageNumber, pageSize);
+        return new PagedModel<>(followerRepo.findByFollowed_Id(userId, pageable));
 
     }
 
     @Override
-    public Page<UserOverviewDTO> getAllFollowings(Long userId, String sortBy, String sortOrder, int pageNumber, int pageSize) {
-        Pageable pageable = GeneralMethod.getPageable(sortBy, sortOrder, pageNumber, pageSize);
-        return followerRepo.findByFollower_Id(userId, pageable);
+    public PagedModel<UserOverviewDTO> getAllFollowings(Long userId, int pageNumber, int pageSize) {
+        Pageable pageable = GeneralMethod.getPageable(null, null, pageNumber, pageSize);
+        return new PagedModel<>(followerRepo.findByFollower_Id(userId, pageable));
     }
 
     @Override

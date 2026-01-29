@@ -1,6 +1,6 @@
 package com.boot.spring.blogify.service;
 
-import com.boot.spring.blogify.entity.Admin;
+import com.boot.spring.blogify.entity.user.Admin;
 
 import java.util.List;
 

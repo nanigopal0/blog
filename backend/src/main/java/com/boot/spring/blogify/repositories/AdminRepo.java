@@ -1,6 +1,6 @@
 package com.boot.spring.blogify.repositories;
 
-import com.boot.spring.blogify.entity.Admin;
+import com.boot.spring.blogify.entity.user.Admin;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

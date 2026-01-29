@@ -2,7 +2,7 @@ package com.boot.spring.blogify.controller;
 
 
 import com.boot.spring.blogify.dto.CategoryDTO;
-import com.boot.spring.blogify.entity.Category;
+import com.boot.spring.blogify.entity.blog.Category;
 import com.boot.spring.blogify.service.CategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,7 +33,7 @@ public class CategoryController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<String> updateCategory(@RequestParam(value = "category-id") Long categoryId, @RequestBody String category) {
+    public ResponseEntity<String> updateCategory(@RequestParam(value = "category_id") Long categoryId, @RequestBody String category) {
         return new ResponseEntity<>(categoryService.updateCategory(categoryId, category), HttpStatus.OK);
     }
 
